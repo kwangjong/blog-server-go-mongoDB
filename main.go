@@ -11,8 +11,8 @@ func main() {
 	}
 
 	post := &db.Post{
-		Title: "test mongo",
-		Description: "testing mongo db insert",
+		Title: "test2 mongo",
+		Description: "testing mong2so db insert",
 		By: "kj",
 		Timestamp: "1234",
 		Tags: []string{"test", "mongodb", "go"},
@@ -20,7 +20,7 @@ func main() {
 	}
 
 	
-	err = db.Insert(post)
+	err = db.Update("63fdc604f30b565e9e716976", post)
 	if err != nil {
 		panic(err)
 	}

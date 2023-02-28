@@ -119,8 +119,9 @@ func Update(id string, post *Post) error {
 
 	filter := bson.D{{"_id", object_id}}
 	update := bson.D{{"$set", *post}}
-	result, err := collection.UpdateOne(context.TODO(), filter, update)
-	fmt.Printf("Updated document with _id: %s\n", id)
+	_, err = coll.UpdateOne(context.TODO(), filter, update)
+	log.Printf("Updated document with _id: %s\n", id)
+	return err
 }
 
 // func Find(filter *bson.D) ([]Post, error) {
