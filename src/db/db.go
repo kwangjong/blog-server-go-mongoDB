@@ -124,22 +124,45 @@ func Update(id string, post *Post) error {
 	return err
 }
 
-// func Find(filter *bson.D) ([]Post, error) {
-// 	if mongo_client.client == nil {
-// 		return errors.New("Mongo db not connected")
-// 	}
+func Read(skip int64, numPost int64) (*[]Post, error) {
+	if mongo_client.client == nil {
+		return nil, errors.New("Mongo db not connected")
+	}
 
-// 	coll := mongo_client.postCollc
-// 	cursor, err := coll.Find(context.TODO(), filter)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	coll := mongo_client.postColl
+	filter := bson.D{}
+	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost)
+	cursor, err := coll.Find(context.TODO(), filter, opts)
+	if err != nil {
+		return nil, err
+	}
 
-// 	var results []Post
-// 	err = cursor.All(context.TODO(), &results)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	log.Println("Found %d documents with filter:%v", filter)
-// 	return results, err
-// }
+	var results []Post
+	err = cursor.All(context.TODO(), &results)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Read %d documents%v", numPost)
+	return &results, err
+}
+
+func Find(filter interface{}, skip int64, numPost int64) (*[]Post, error) {
+	if mongo_client.client == nil {
+		return nil, errors.New("Mongo db not connected")
+	}
+
+	coll := mongo_client.postColl
+	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost)
+	cursor, err := coll.Find(context.TODO(), filter, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []Post
+	err = cursor.All(context.TODO(), &results)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Read %d documents with filter: %v", numPost, filter)
+	return &results, err
+}
