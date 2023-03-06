@@ -9,14 +9,14 @@ import (
 	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	// "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 const (
-	MONGO_KEY = "key.json"
+	MONGO_KEY = "/home/kwangjong/server/key.json"
 	MONGO_URL = "mongodb+srv://cluster0.rtswz75.mongodb.net"
 )
 
@@ -78,53 +78,68 @@ func Insert(post *Post) error {
 	}
 	coll := mongo_client.postColl
 	
-	id, err := coll.InsertOne(context.TODO(), *post)
+	result, err := coll.InsertOne(context.TODO(), *post)
 	if err != nil {
 		return err
 	}
-	log.Printf("Inserted document with _id: %s\n", id)
+	log.Printf("Inserted document with _id: %s\n", result)
 	return nil
 }
 
-func Delete(id string) error {
+func Delete(filter interface{}) error {
 	if mongo_client.client == nil {
 		return errors.New("Mongo db not connected")
 	}
 	coll := mongo_client.postColl
-
-	object_id, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
 	
-	filter := bson.D{{"_id", object_id}}
-	_, err = coll.DeleteOne(context.TODO(), filter)
+	_, err := coll.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err
 	}
-	log.Printf("Deleted document with _id: %s\n", id)
+	log.Printf("Deleted document with filter: %s\n", filter)
 	return nil
 }
 
-func Update(id string, post *Post) error {
+// func Update(id string, post *Post) error {
+// 	if mongo_client.client == nil {
+// 		return errors.New("Mongo db not connected")
+// 	}
+// 	coll := mongo_client.postColl
+
+// 	object_id, err := primitive.ObjectIDFromHex(id)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	filter := bson.D{{"_id", object_id}}
+// 	update := bson.D{{"$set", *post}}
+// 	_, err = coll.UpdateOne(context.TODO(), filter, update)
+// 	log.Printf("Updated document with _id: %s\n", id)
+// 	return err
+// }
+
+func Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
 	if mongo_client.client == nil {
-		return errors.New("Mongo db not connected")
+		return nil, errors.New("Mongo db not connected")
 	}
+
 	coll := mongo_client.postColl
-
-	object_id, err := primitive.ObjectIDFromHex(id)
+	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost)
+	cursor, err := coll.Find(context.TODO(), filter, opts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	filter := bson.D{{"_id", object_id}}
-	update := bson.D{{"$set", *post}}
-	_, err = coll.UpdateOne(context.TODO(), filter, update)
-	log.Printf("Updated document with _id: %s\n", id)
-	return err
+	var results []*Post
+	err = cursor.All(context.TODO(), &results)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Read %d documents with filter: %v", len(results), filter)
+	return results, err
 }
 
-func Read(skip int64, numPost int64) (*[]Post, error) {
+func Load(skip int64, numPost int64) ([]*Post, error) {
 	if mongo_client.client == nil {
 		return nil, errors.New("Mongo db not connected")
 	}
@@ -137,32 +152,11 @@ func Read(skip int64, numPost int64) (*[]Post, error) {
 		return nil, err
 	}
 
-	var results []Post
+	var results []*Post
 	err = cursor.All(context.TODO(), &results)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Read %d documents%v", numPost)
-	return &results, err
-}
-
-func Find(filter interface{}, skip int64, numPost int64) (*[]Post, error) {
-	if mongo_client.client == nil {
-		return nil, errors.New("Mongo db not connected")
-	}
-
-	coll := mongo_client.postColl
-	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost)
-	cursor, err := coll.Find(context.TODO(), filter, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	var results []Post
-	err = cursor.All(context.TODO(), &results)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("Read %d documents with filter: %v", numPost, filter)
-	return &results, err
+	log.Printf("Load %d documents\n", len(results))
+	return results, err
 }
