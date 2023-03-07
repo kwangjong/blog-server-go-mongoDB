@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	//"time"
 	"github.com/kwangjong/kwangjong.github.io/db"
 )
@@ -11,26 +11,29 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	// post := &db.Post{
-	// 	Title: "test3 mongo",
-	// 	Description: "testing mongo db insert",
-	// 	By: "kj",
-	// 	DateCreated: time.Now(),
-	// 	LastUpdated: time.Now(),
-	// 	Tags: []string{"test", "mongodb", "go"},
-	// 	Body: "hello world",
-	// }
-	filter := struct{
-		By	string
-	}{"kj"}
-
-	posts, err := db.Find(filter, 2, 2)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(posts)
-
 	defer db.Close()
+
+	// posts := []*db.Post{
+	// 	&db.Post{
+	// 		Title: "mongo test1",
+	// 		Tags: []string{"db", "test"},
+	// 	},
+	// 	&db.Post{
+	// 		Title: "mongo test2",
+	// 		Tags: []string{"foo", "test"},
+	// 	}, 
+	// 	&db.Post{
+	// 		Title: "mongo test3",
+	// 		Tags: []string{"db"},
+	// 	},
+	// }
+
+	// for _, p := range posts {
+	// 	_, err = db.Insert(p)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }
+
+	db.Distinct("tags")
 }

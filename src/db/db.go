@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
-	// "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
@@ -72,26 +72,31 @@ func Close() error {
 	return err
 }
 
-func Insert(post *Post) error {
+func Insert(post *Post) (primitive.ObjectID, error) {
 	if mongo_client.client == nil {
-		return errors.New("Mongo db not connected")
+		return primitive.NilObjectID, errors.New("Mongo db not connected")
 	}
 	coll := mongo_client.postColl
 	
 	result, err := coll.InsertOne(context.TODO(), *post)
 	if err != nil {
-		return err
+		return primitive.NilObjectID, err
 	}
-	log.Printf("Inserted document with _id: %s\n", result)
-	return nil
+
+	log.Printf("Inserted document with _id: %s\n", result.InsertedID)
+
+	id, _:= result.InsertedID.(primitive.ObjectID)
+	return id, nil
 }
 
-func Delete(filter interface{}) error {
+func Delete(id primitive.ObjectID) error {
 	if mongo_client.client == nil {
 		return errors.New("Mongo db not connected")
 	}
 	coll := mongo_client.postColl
 	
+	filter := FilterId{id}
+
 	_, err := coll.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err
@@ -100,23 +105,25 @@ func Delete(filter interface{}) error {
 	return nil
 }
 
-// func Update(id string, post *Post) error {
-// 	if mongo_client.client == nil {
-// 		return errors.New("Mongo db not connected")
-// 	}
-// 	coll := mongo_client.postColl
+func Update(id primitive.ObjectID, post *Post) (primitive.ObjectID, error) {
+	if mongo_client.client == nil {
+		return primitive.NilObjectID, errors.New("Mongo db not connected")
+	}
+	coll := mongo_client.postColl
 
-// 	object_id, err := primitive.ObjectIDFromHex(id)
-// 	if err != nil {
-// 		return err
-// 	}
+	filter := FilterId{id}
+	update := bson.D{{"$set", *post}}
 
-// 	filter := bson.D{{"_id", object_id}}
-// 	update := bson.D{{"$set", *post}}
-// 	_, err = coll.UpdateOne(context.TODO(), filter, update)
-// 	log.Printf("Updated document with _id: %s\n", id)
-// 	return err
-// }
+	result, err := coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	
+	log.Printf("Updated document with _id: %s\n", result.UpsertedID)
+
+	id, _ = result.UpsertedID.(primitive.ObjectID)
+	return id, nil
+}
 
 func Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
 	if mongo_client.client == nil {
@@ -135,19 +142,18 @@ func Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Read %d documents with filter: %v", len(results), filter)
+	log.Printf("Found %d documents with filter: %v", len(results), filter)
 	return results, err
 }
 
-func Load(skip int64, numPost int64) ([]*Post, error) {
+func Read(skip int64, numPost int64) ([]*Post, error) {
 	if mongo_client.client == nil {
 		return nil, errors.New("Mongo db not connected")
 	}
 
 	coll := mongo_client.postColl
-	filter := bson.D{}
 	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost)
-	cursor, err := coll.Find(context.TODO(), filter, opts)
+	cursor, err := coll.Find(context.TODO(), bson.D{}, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +163,21 @@ func Load(skip int64, numPost int64) ([]*Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Load %d documents\n", len(results))
+	log.Printf("Read %d documents\n", len(results))
 	return results, err
+}
+
+func Distinct(fieldName string) ([]interface{}, error) {
+	results := []interface{}{}
+	if mongo_client.client == nil {
+		return results, errors.New("Mongo db not connected")
+	}
+
+	coll := mongo_client.postColl
+	results, err := coll.Distinct(context.TODO(), fieldName, bson.D{})
+	if err != nil {
+    	return results, err
+	}
+	log.Printf("Found %d distinct %s\n", len(results), fieldName)
+	return results, nil
 }
