@@ -22,17 +22,15 @@ const (
 	MONGO_URL = "mongodb+srv://cluster0.rtswz75.mongodb.net"
 )
 
-type Mongo_Struct struct {
+type Mongo_Client struct {
 	client   *mongo.Client
 	postColl *mongo.Collection
 }
 
-var mongo_client Mongo_Struct
-
-func Connect_DB(collection string) error {
+func Connect_DB(collection string) (*Mongo_Client, error) {
 	key_file, err := os.Open(MONGO_KEY)
     if err != nil {
-        return err
+        return nil, err
     }
     defer key_file.Close()
 
@@ -46,24 +44,23 @@ func Connect_DB(collection string) error {
 
 	client, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	log.Println("Mongo db connection established")
 
 	err = client.Ping(context.TODO(), readpref.Primary())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	log.Println("Mongo db successfully pinged")
 
-	mongo_client = Mongo_Struct {
+	return &Mongo_Client {
 		client:    client,
 		postColl:  client.Database("db").Collection(collection),
-	}
-	return nil
+	}, nil
 }
 
-func Close() error {
+func (mongo_client *Mongo_Client) Close() error {
 	if mongo_client.client == nil {
 		return errors.New("Mongo db not connected")
 	}
@@ -74,7 +71,7 @@ func Close() error {
 	return err
 }
 
-func Insert(post *Post) (string, error) {
+func (mongo_client *Mongo_Client) Insert(post *Post) (string, error) {
 	if mongo_client.client == nil {
 		return "", errors.New("Mongo db not connected")
 	}
@@ -99,7 +96,7 @@ func Insert(post *Post) (string, error) {
 	return post.Id, nil
 }
 
-func Delete(id string) error {
+func (mongo_client *Mongo_Client) Delete(id string) error {
 	if mongo_client.client == nil {
 		return errors.New("Mongo db not connected")
 	}
@@ -115,7 +112,7 @@ func Delete(id string) error {
 	return nil
 }
 
-func Update(id string, post *Post) (string, error) {
+func (mongo_client *Mongo_Client) Update(id string, post *Post) (string, error) {
 	if mongo_client.client == nil {
 		return "", errors.New("Mongo db not connected")
 	}
@@ -147,7 +144,7 @@ func Update(id string, post *Post) (string, error) {
 	return post.Id, nil
 }
 
-func Get(filter FilterId) (*Post, error) {
+func (mongo_client *Mongo_Client) Get(filter FilterId) (*Post, error) {
 	if mongo_client.client == nil {
 		return nil, errors.New("Mongo db not connected")
 	}
@@ -168,7 +165,7 @@ func Get(filter FilterId) (*Post, error) {
 	return results[0], err
 }
 
-func Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
+func (mongo_client *Mongo_Client) Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
 	if mongo_client.client == nil {
 		return nil, errors.New("Mongo db not connected")
 	}
@@ -197,7 +194,7 @@ func Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
 	return results, err
 }
 
-func Read(skip int64, numPost int64) ([]*Post, error) {
+func (mongo_client *Mongo_Client) Read(skip int64, numPost int64) ([]*Post, error) {
 	if mongo_client.client == nil {
 		return nil, errors.New("Mongo db not connected")
 	}
@@ -226,7 +223,7 @@ func Read(skip int64, numPost int64) ([]*Post, error) {
 	return results, err
 }
 
-func Distinct(fieldName string) ([]interface{}, error) {
+func (mongo_client *Mongo_Client) Distinct(fieldName string) ([]interface{}, error) {
 	results := []interface{}{}
 	if mongo_client.client == nil {
 		return results, errors.New("Mongo db not connected")

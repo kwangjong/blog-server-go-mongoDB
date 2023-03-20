@@ -7,23 +7,23 @@ import (
 )
 
 func Test_Connect_DB_Close(t *testing.T) {
-	err := db.Connect_DB("test")
+	client, err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = db.Close()
+	err = client.Close()
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_Insert_Delete(t *testing.T) {
-	err := db.Connect_DB("test")
+	client, err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
-	defer db.Close()
+	defer client.Close()
 
 	post := &db.Post{
 		Title: "mongo Test_Insert_Delete",
@@ -36,23 +36,23 @@ func Test_Insert_Delete(t *testing.T) {
 		Html: "<p>hello world</p>",
 	}
 
-	id, err := db.Insert(post)
+	id, err := client.Insert(post)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = db.Delete(id)
+	err = client.Delete(id)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_Get(t *testing.T) {
-	err := db.Connect_DB("test")
+	client, err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
-	defer db.Close()
+	defer client.Close()
 
 	posts := []*db.Post{
 		&db.Post{
@@ -71,13 +71,13 @@ func Test_Get(t *testing.T) {
 
 	ids := [3]string{}
 	for i, p := range posts {
-		ids[i], err = db.Insert(p)
+		ids[i], err = client.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
-	result, err := db.Get(db.FilterId{ids[0]})
+	result, err := client.Get(db.FilterId{ids[0]})
 	if err != nil {
 		t.Error(err)
 	}
@@ -87,7 +87,7 @@ func Test_Get(t *testing.T) {
 	}
 	
 	for _, id := range ids {
-		err = db.Delete(id)
+		err = client.Delete(id)
 		if err != nil {
 			t.Error(err)
 		}
@@ -95,11 +95,11 @@ func Test_Get(t *testing.T) {
 }
 
 func Test_Read(t *testing.T) {
-	err := db.Connect_DB("test")
+	client, err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
-	defer db.Close()
+	defer client.Close()
 
 	posts := []*db.Post{
 		&db.Post{
@@ -114,13 +114,13 @@ func Test_Read(t *testing.T) {
 	}
 	ids := [3]string{}
 	for i, p := range posts {
-		ids[i], err = db.Insert(p)
+		ids[i], err = client.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
-	results, err := db.Read(0, 3)
+	results, err := client.Read(0, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -131,7 +131,7 @@ func Test_Read(t *testing.T) {
 		}
 	}
 
-	results, err = db.Read(1, 3)
+	results, err = client.Read(1, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -143,7 +143,7 @@ func Test_Read(t *testing.T) {
 	}
 
 	for _, id := range ids {
-		err = db.Delete(id)
+		err = client.Delete(id)
 		if err != nil {
 			t.Error(err)
 		}
@@ -151,11 +151,11 @@ func Test_Read(t *testing.T) {
 }
 
 func Test_Find(t *testing.T) {
-	err := db.Connect_DB("test")
+	client, err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
-	defer db.Close()
+	defer client.Close()
 
 	posts := []*db.Post{
 		&db.Post{
@@ -174,13 +174,13 @@ func Test_Find(t *testing.T) {
 
 	ids := [3]string{}
 	for i, p := range posts {
-		ids[i], err = db.Insert(p)
+		ids[i], err = client.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
-	results, err := db.Find(db.FilterTag{"db"}, 0, 3)
+	results, err := client.Find(db.FilterTag{"db"}, 0, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -193,7 +193,7 @@ func Test_Find(t *testing.T) {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test1", results[1].Title)
 	}
 
-	results, err = db.Find(db.FilterTag{"test"}, 1, 3)
+	results, err = client.Find(db.FilterTag{"test"}, 1, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -203,7 +203,7 @@ func Test_Find(t *testing.T) {
 	}
 	
 	for _, id := range ids {
-		err = db.Delete(id)
+		err = client.Delete(id)
 		if err != nil {
 			t.Error(err)
 		}
@@ -211,11 +211,11 @@ func Test_Find(t *testing.T) {
 }
 
 func Test_Update(t *testing.T) {
-	err := db.Connect_DB("test")
+	client, err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
-	defer db.Close()
+	defer client.Close()
 
 	post := &db.Post{
 		Title: "mongo Test_Update",
@@ -227,19 +227,19 @@ func Test_Update(t *testing.T) {
 		MarkDown: "hello world",
 	}
 
-	id, err := db.Insert(post)
+	id, err := client.Insert(post)
 	if err != nil {
 		t.Error(err)
 	}
 
 	post.Author = "mongo"
 
-	id, err = db.Update(id, post)
+	id, err = client.Update(id, post)
 	if err != nil {
 		t.Error(err)
 	}
 
-	results, err := db.Find(db.FilterId{id}, 0, 3)
+	results, err := client.Find(db.FilterId{id}, 0, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -248,18 +248,18 @@ func Test_Update(t *testing.T) {
 		t.Errorf("Expected: %s Received: %s\n", "mongo", results[0].Author)
 	}
 
-	err = db.Delete(id)
+	err = client.Delete(id)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_Distinct(t *testing.T) {
-	err := db.Connect_DB("test")
+	client, err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
-	defer db.Close()
+	defer client.Close()
 
 	posts := []*db.Post{
 		&db.Post{
@@ -280,13 +280,13 @@ func Test_Distinct(t *testing.T) {
 
 	ids := [3]string{}
 	for i, p := range posts {
-		ids[i], err = db.Insert(p)
+		ids[i], err = client.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
-	results, err := db.Distinct("tags")
+	results, err := client.Distinct("tags")
 	if err != nil {
 		t.Error(err)
 	}
@@ -298,7 +298,7 @@ func Test_Distinct(t *testing.T) {
 	}
 	
 	for _, id := range ids {
-		err = db.Delete(id)
+		err = client.Delete(id)
 		if err != nil {
 			t.Error(err)
 		}
