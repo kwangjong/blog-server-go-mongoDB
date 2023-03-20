@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	MONGO_KEY = "/home/kwangjong/server/key.json"
+	MONGO_KEY = "/home/kwangjong/kwangjong.github.io/key.json"
 	MONGO_URL = "mongodb+srv://cluster0.rtswz75.mongodb.net"
 )
 
@@ -29,7 +29,7 @@ type Mongo_Struct struct {
 
 var mongo_client Mongo_Struct
 
-func Connect_DB() error {
+func Connect_DB(collection string) error {
 	key_file, err := os.Open(MONGO_KEY)
     if err != nil {
         return err
@@ -58,7 +58,7 @@ func Connect_DB() error {
 
 	mongo_client = Mongo_Struct {
 		client:    client,
-		postColl:  client.Database("db").Collection("posts"),
+		postColl:  client.Database("db").Collection(collection),
 	}
 	return nil
 }
@@ -87,16 +87,16 @@ func Insert(post *Post) (string, error) {
 		post.LastUpdated = time.Now()
 	}
 
-	post.ID = fmt.Sprintf("%s-%s", post.DateCreated.Format("2006-01-02"), strings.Replace(post.Title, " ", "-", -1))
+	post.Id = fmt.Sprintf("%s-%s", post.DateCreated.Format("2006-01-02"), strings.Replace(post.Title, " ", "-", -1))
 	
 	_, err := coll.InsertOne(context.TODO(), *post)
 	if err != nil {
 		return "", err
 	}
 
-	log.Printf("Inserted document with id: %s\n", post.ID)
+	log.Printf("Inserted document with id: %s\n", post.Id)
 
-	return post.ID, nil
+	return post.Id, nil
 }
 
 func Delete(id string) error {
@@ -130,7 +130,7 @@ func Update(id string, post *Post) (string, error) {
 		new_title := strings.Replace(post.Title, " ", "-", -1)
 
 		if orig_title != new_title {
-			post.ID = fmt.Sprintf("%s-%s", id[:10], new_title)
+			post.Id = fmt.Sprintf("%s-%s", id[:10], new_title)
 		}
 	}
 
@@ -142,9 +142,30 @@ func Update(id string, post *Post) (string, error) {
 		return "", err
 	}
 	
-	log.Printf("Updated document with id: %s\n", post.ID)
+	log.Printf("Updated document with id: %s\n", post.Id)
 
-	return post.ID, nil
+	return post.Id, nil
+}
+
+func Get(filter FilterId) (*Post, error) {
+	if mongo_client.client == nil {
+		return nil, errors.New("Mongo db not connected")
+	}
+
+	coll := mongo_client.postColl
+	opts := options.Find()
+	cursor, err := coll.Find(context.TODO(), filter, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*Post
+	err = cursor.All(context.TODO(), &results)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Found documents with id: %v", filter)
+	return results[0], err
 }
 
 func Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
@@ -153,7 +174,15 @@ func Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
 	}
 
 	coll := mongo_client.postColl
-	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost)
+	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
+		{"id", 1}, 
+		{"title", 1},
+		{"description", 1},
+		{"author", 1},
+		{"dateCreated", 1},
+		{"lastUpdated", 1},
+		{"tags", 1},
+	})
 	cursor, err := coll.Find(context.TODO(), filter, opts)
 	if err != nil {
 		return nil, err

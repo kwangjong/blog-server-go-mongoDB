@@ -5,7 +5,7 @@ import (
 )
 
 type Post struct {
-	ID				string 				`bson:"id,omitempty"`
+	Id				string 				`bson:"id,omitempty"`
 	Title 		 	string  			`bson:"title,omitempty"`
 	Description  	string  			`bson:"description,omitempty"`
 	Author			string  			`bson:"author,omitempty"`

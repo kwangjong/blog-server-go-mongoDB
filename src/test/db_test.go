@@ -7,7 +7,7 @@ import (
 )
 
 func Test_Connect_DB_Close(t *testing.T) {
-	err := db.Connect_DB()
+	err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -19,7 +19,7 @@ func Test_Connect_DB_Close(t *testing.T) {
 }
 
 func Test_Insert_Delete(t *testing.T) {
-	err := db.Connect_DB()
+	err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -47,8 +47,55 @@ func Test_Insert_Delete(t *testing.T) {
 	}
 }
 
+func Test_Get(t *testing.T) {
+	err := db.Connect_DB("test")
+	if err != nil {
+		t.Error(err)
+	}
+	defer db.Close()
+
+	posts := []*db.Post{
+		&db.Post{
+			Title: "mongo test1",
+			Tags: []string{"db", "test"},
+		},
+		&db.Post{
+			Title: "mongo test2",
+			Tags: []string{"foo", "test"},
+		}, 
+		&db.Post{
+			Title: "mongo test3",
+			Tags: []string{"db"},
+		},
+	}
+
+	ids := [3]string{}
+	for i, p := range posts {
+		ids[i], err = db.Insert(p)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+
+	result, err := db.Get(db.FilterId{ids[0]})
+	if err != nil {
+		t.Error(err)
+	}
+
+	if result.Title != "mongo test1" {
+		t.Errorf("Expected: %s Received: %s\n", "mongo test1", result.Title)
+	}
+	
+	for _, id := range ids {
+		err = db.Delete(id)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+}
+
 func Test_Read(t *testing.T) {
-	err := db.Connect_DB()
+	err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -78,9 +125,9 @@ func Test_Read(t *testing.T) {
 		t.Error(err)
 	}
 
-	for i, p := range results {
-		if p.Title != posts[2-i].Title {
-		 	t.Errorf("Expected: %s Received: %s\n", posts[2-i].Title, p.Title)
+	for i, p := range posts {
+		if p.Title != results[len(results)-1-i].Title {
+		 	t.Errorf("Expected: %s Received: %s\n",p.Title, results[len(results)-1-i].Title)
 		}
 	}
 
@@ -89,9 +136,9 @@ func Test_Read(t *testing.T) {
 		t.Error(err)
 	}
 
-	for i, p := range results {
-		if p.Title != posts[1-i].Title {
-		 	t.Errorf("Expected: %s Received: %s\n", posts[1-i].Title, p.Title)
+	for i, p := range posts[:2] {
+		if p.Title != results[len(results)-1-i].Title {
+		 	t.Errorf("Expected: %s Received: %s\n", p.Title, results[len(results)-1-i].Title)
 		}
 	}
 
@@ -104,7 +151,7 @@ func Test_Read(t *testing.T) {
 }
 
 func Test_Find(t *testing.T) {
-	err := db.Connect_DB()
+	err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -164,7 +211,7 @@ func Test_Find(t *testing.T) {
 }
 
 func Test_Update(t *testing.T) {
-	err := db.Connect_DB()
+	err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -208,7 +255,7 @@ func Test_Update(t *testing.T) {
 }
 
 func Test_Distinct(t *testing.T) {
-	err := db.Connect_DB()
+	err := db.Connect_DB("test")
 	if err != nil {
 		t.Error(err)
 	}
