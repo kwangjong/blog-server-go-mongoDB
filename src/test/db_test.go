@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 	"github.com/kwangjong/kwangjong.github.io/db"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func Test_Connect_DB_Close(t *testing.T) {
@@ -33,7 +32,8 @@ func Test_Insert_Delete(t *testing.T) {
 		DateCreated: time.Now(),
 		LastUpdated: time.Now(),
 		Tags: []string{"test", "mongodb", "go"},
-		Body: "hello world",
+		MarkDown: "hello world",
+		Html: "<p>hello world</p>",
 	}
 
 	id, err := db.Insert(post)
@@ -65,7 +65,7 @@ func Test_Read(t *testing.T) {
 			Title: "mongo test3",
 		},
 	}
-	ids := [3]primitive.ObjectID{}
+	ids := [3]string{}
 	for i, p := range posts {
 		ids[i], err = db.Insert(p)
 		if err != nil {
@@ -78,9 +78,9 @@ func Test_Read(t *testing.T) {
 		t.Error(err)
 	}
 
-	for i, p := range posts {
-		if results[i].Title != p.Title {
-			t.Errorf("Expected: %s Received: %s\n", p.Title, results[i].Title)
+	for i, p := range results {
+		if p.Title != posts[2-i].Title {
+		 	t.Errorf("Expected: %s Received: %s\n", posts[2-i].Title, p.Title)
 		}
 	}
 
@@ -89,9 +89,9 @@ func Test_Read(t *testing.T) {
 		t.Error(err)
 	}
 
-	for i, p := range posts[1:] {
-		if results[i].Title != p.Title {
-			t.Errorf("Expected: %s Received: %s\n", p.Title, results[i].Title)
+	for i, p := range results {
+		if p.Title != posts[1-i].Title {
+		 	t.Errorf("Expected: %s Received: %s\n", posts[1-i].Title, p.Title)
 		}
 	}
 
@@ -125,7 +125,7 @@ func Test_Find(t *testing.T) {
 		},
 	}
 
-	ids := [3]primitive.ObjectID{}
+	ids := [3]string{}
 	for i, p := range posts {
 		ids[i], err = db.Insert(p)
 		if err != nil {
@@ -138,12 +138,12 @@ func Test_Find(t *testing.T) {
 		t.Error(err)
 	}
 
-	if results[0].Title != "mongo test1" {
-		t.Errorf("Expected: %s Received: %s\n", "mongo test1", results[0].Title)
+	if results[0].Title != "mongo test3" {
+		t.Errorf("Expected: %s Received: %s\n", "mongo test3", results[0].Title)
 	}
 	
-	if results[1].Title != "mongo test3" {
-		t.Errorf("Expected: %s Received: %s\n", "mongo test3", results[1].Title)
+	if results[1].Title != "mongo test1" {
+		t.Errorf("Expected: %s Received: %s\n", "mongo test1", results[1].Title)
 	}
 
 	results, err = db.Find(db.FilterTag{"test"}, 1, 3)
@@ -151,7 +151,7 @@ func Test_Find(t *testing.T) {
 		t.Error(err)
 	}
 
-	if results[0].Title != "mongo test2" {
+	if results[0].Title != "mongo test1" {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test1", results[0].Title)
 	}
 	
@@ -177,7 +177,7 @@ func Test_Update(t *testing.T) {
 		DateCreated: time.Now(),
 		LastUpdated: time.Now(),
 		Tags: []string{"test", "mongodb", "go"},
-		Body: "hello world",
+		MarkDown: "hello world",
 	}
 
 	id, err := db.Insert(post)
@@ -231,7 +231,7 @@ func Test_Distinct(t *testing.T) {
 
 	expected := []string{"db", "foo", "test"}
 
-	ids := [3]primitive.ObjectID{}
+	ids := [3]string{}
 	for i, p := range posts {
 		ids[i], err = db.Insert(p)
 		if err != nil {

@@ -7,10 +7,12 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
+	"fmt"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
@@ -72,24 +74,32 @@ func Close() error {
 	return err
 }
 
-func Insert(post *Post) (primitive.ObjectID, error) {
+func Insert(post *Post) (string, error) {
 	if mongo_client.client == nil {
-		return primitive.NilObjectID, errors.New("Mongo db not connected")
+		return "", errors.New("Mongo db not connected")
 	}
 	coll := mongo_client.postColl
-	
-	result, err := coll.InsertOne(context.TODO(), *post)
-	if err != nil {
-		return primitive.NilObjectID, err
+
+	if post.DateCreated.IsZero() {
+		post.DateCreated = time.Now()
+		post.LastUpdated = time.Now()
+	} else if post.LastUpdated.IsZero() {
+		post.LastUpdated = time.Now()
 	}
 
-	log.Printf("Inserted document with _id: %s\n", result.InsertedID)
+	post.ID = fmt.Sprintf("%s-%s", post.DateCreated.Format("2006-01-02"), strings.Replace(post.Title, " ", "-", -1))
+	
+	_, err := coll.InsertOne(context.TODO(), *post)
+	if err != nil {
+		return "", err
+	}
 
-	id, _:= result.InsertedID.(primitive.ObjectID)
-	return id, nil
+	log.Printf("Inserted document with id: %s\n", post.ID)
+
+	return post.ID, nil
 }
 
-func Delete(id primitive.ObjectID) error {
+func Delete(id string) error {
 	if mongo_client.client == nil {
 		return errors.New("Mongo db not connected")
 	}
@@ -105,24 +115,36 @@ func Delete(id primitive.ObjectID) error {
 	return nil
 }
 
-func Update(id primitive.ObjectID, post *Post) (primitive.ObjectID, error) {
+func Update(id string, post *Post) (string, error) {
 	if mongo_client.client == nil {
-		return primitive.NilObjectID, errors.New("Mongo db not connected")
+		return "", errors.New("Mongo db not connected")
 	}
 	coll := mongo_client.postColl
+
+	if post.LastUpdated.IsZero() {
+		post.LastUpdated = time.Now()
+	}
+
+	if post.Title != "" {
+		orig_title := id[11:]
+		new_title := strings.Replace(post.Title, " ", "-", -1)
+
+		if orig_title != new_title {
+			post.ID = fmt.Sprintf("%s-%s", id[:10], new_title)
+		}
+	}
 
 	filter := FilterId{id}
 	update := bson.D{{"$set", *post}}
 
-	result, err := coll.UpdateOne(context.TODO(), filter, update)
+	_, err := coll.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
-		return primitive.NilObjectID, err
+		return "", err
 	}
 	
-	log.Printf("Updated document with _id: %s\n", result.UpsertedID)
+	log.Printf("Updated document with id: %s\n", post.ID)
 
-	id, _ = result.UpsertedID.(primitive.ObjectID)
-	return id, nil
+	return post.ID, nil
 }
 
 func Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
@@ -152,7 +174,15 @@ func Read(skip int64, numPost int64) ([]*Post, error) {
 	}
 
 	coll := mongo_client.postColl
-	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost)
+	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
+			{"id", 1}, 
+			{"title", 1},
+			{"description", 1},
+			{"author", 1},
+			{"dateCreated", 1},
+			{"lastUpdated", 1},
+			{"tags", 1},
+		})
 	cursor, err := coll.Find(context.TODO(), bson.D{}, opts)
 	if err != nil {
 		return nil, err
