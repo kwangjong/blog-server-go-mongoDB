@@ -77,7 +77,7 @@ func Test_Get(t *testing.T) {
 		}
 	}
 
-	result, err := client.Get(db.FilterId{ids[0]})
+	result, err := client.Get(ids[0])
 	if err != nil {
 		t.Error(err)
 	}

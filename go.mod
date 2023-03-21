@@ -16,8 +16,10 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/text v0.3.7 // indirect
 	github.com/kwangjong/kwangjong.github.io/db v1.0.0
+	github.com/kwangjong/kwangjong.github.io/server v1.0.0
 )
 
 replace (
 	github.com/kwangjong/kwangjong.github.io/db => ./src/db
+	github.com/kwangjong/kwangjong.github.io/server => ./src/server
 )

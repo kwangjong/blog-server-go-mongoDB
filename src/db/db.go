@@ -144,12 +144,13 @@ func (mongo_client *Mongo_Client) Update(id string, post *Post) (string, error) 
 	return post.Id, nil
 }
 
-func (mongo_client *Mongo_Client) Get(filter FilterId) (*Post, error) {
+func (mongo_client *Mongo_Client) Get(id string) (*Post, error) {
 	if mongo_client.client == nil {
 		return nil, errors.New("Mongo db not connected")
 	}
 
 	coll := mongo_client.postColl
+	filter := FilterId{id}
 	opts := options.Find()
 	cursor, err := coll.Find(context.TODO(), filter, opts)
 	if err != nil {
@@ -161,7 +162,7 @@ func (mongo_client *Mongo_Client) Get(filter FilterId) (*Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Found documents with id: %v", filter)
+	log.Printf("Found documents with id: %v", id)
 	return results[0], err
 }
 
