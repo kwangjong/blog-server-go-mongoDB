@@ -7,9 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
-	"fmt"
-	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -71,86 +68,64 @@ func (mongo_client *Mongo_Client) Close() error {
 	return err
 }
 
-func (mongo_client *Mongo_Client) Insert(post *Post) (string, error) {
-	if mongo_client.client == nil {
-		return "", errors.New("Mongo db not connected")
-	}
-	coll := mongo_client.postColl
-
-	if post.DateCreated.IsZero() {
-		post.DateCreated = time.Now()
-		post.LastUpdated = time.Now()
-	} else if post.LastUpdated.IsZero() {
-		post.LastUpdated = time.Now()
-	}
-
-	post.Id = fmt.Sprintf("%s-%s", post.DateCreated.Format("2006-01-02"), strings.Replace(post.Title, " ", "-", -1))
-	
-	_, err := coll.InsertOne(context.TODO(), *post)
-	if err != nil {
-		return "", err
-	}
-
-	log.Printf("Inserted document with id: %s\n", post.Id)
-
-	return post.Id, nil
-}
-
-func (mongo_client *Mongo_Client) Delete(id string) error {
+func (mongo_client *Mongo_Client) Insert(post *Post) error {
 	if mongo_client.client == nil {
 		return errors.New("Mongo db not connected")
 	}
 	coll := mongo_client.postColl
 	
-	filter := FilterId{id}
+	_, err := coll.InsertOne(context.TODO(), *post)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Inserted document with url: %s\n", post.Url)
+
+	return nil
+}
+
+func (mongo_client *Mongo_Client) Delete(url string) error {
+	if mongo_client.client == nil {
+		return errors.New("Mongo db not connected")
+	}
+	coll := mongo_client.postColl
+	
+	filter := FilterUrl{url}
 
 	_, err := coll.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err
 	}
-	log.Printf("Deleted document with filter: %s\n", filter)
+	log.Printf("Deleted document with url: %s\n", url)
 	return nil
 }
 
-func (mongo_client *Mongo_Client) Update(id string, post *Post) (string, error) {
+func (mongo_client *Mongo_Client) Update(url string, post *Post) error {
 	if mongo_client.client == nil {
-		return "", errors.New("Mongo db not connected")
+		return errors.New("Mongo db not connected")
 	}
 	coll := mongo_client.postColl
 
-	if post.LastUpdated.IsZero() {
-		post.LastUpdated = time.Now()
-	}
-
-	if post.Title != "" {
-		orig_title := id[11:]
-		new_title := strings.Replace(post.Title, " ", "-", -1)
-
-		if orig_title != new_title {
-			post.Id = fmt.Sprintf("%s-%s", id[:10], new_title)
-		}
-	}
-
-	filter := FilterId{id}
+	filter := FilterUrl{url}
 	update := bson.D{{"$set", *post}}
 
 	_, err := coll.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
-		return "", err
+		return err
 	}
 	
-	log.Printf("Updated document with id: %s\n", post.Id)
+	log.Printf("Updated document with url: %s\n", url)
 
-	return post.Id, nil
+	return nil
 }
 
-func (mongo_client *Mongo_Client) Get(id string) (*Post, error) {
+func (mongo_client *Mongo_Client) Get(url string) (*Post, error) {
 	if mongo_client.client == nil {
 		return nil, errors.New("Mongo db not connected")
 	}
 
 	coll := mongo_client.postColl
-	filter := FilterId{id}
+	filter := FilterUrl{url}
 	opts := options.Find()
 	cursor, err := coll.Find(context.TODO(), filter, opts)
 	if err != nil {
@@ -162,7 +137,7 @@ func (mongo_client *Mongo_Client) Get(id string) (*Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Found documents with id: %v", id)
+	log.Printf("Found documents with url: %v", url)
 	return results[0], err
 }
 
@@ -172,13 +147,11 @@ func (mongo_client *Mongo_Client) Find(filter interface{}, skip int64, numPost i
 	}
 
 	coll := mongo_client.postColl
-	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
-		{"id", 1}, 
+	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
+		{"url", 1}, 
 		{"title", 1},
-		{"description", 1},
 		{"author", 1},
-		{"dateCreated", 1},
-		{"lastUpdated", 1},
+		{"date", 1},
 		{"tags", 1},
 	})
 	cursor, err := coll.Find(context.TODO(), filter, opts)
@@ -201,13 +174,10 @@ func (mongo_client *Mongo_Client) Read(skip int64, numPost int64) ([]*Post, erro
 	}
 
 	coll := mongo_client.postColl
-	opts := options.Find().SetSort(bson.D{{"dateCreated", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
-			{"id", 1}, 
+	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
+			{"url", 1}, 
 			{"title", 1},
-			{"description", 1},
-			{"author", 1},
-			{"dateCreated", 1},
-			{"lastUpdated", 1},
+			{"date", 1},
 			{"tags", 1},
 		})
 	cursor, err := coll.Find(context.TODO(), bson.D{}, opts)

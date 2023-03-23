@@ -26,22 +26,20 @@ func Test_Insert_Delete(t *testing.T) {
 	defer client.Close()
 
 	post := &db.Post{
-		Title: "mongo Test_Insert_Delete",
-		Description: "testing mongo db insert",
-		Author: "kj",
-		DateCreated: time.Now(),
-		LastUpdated: time.Now(),
+		Url: "2023-03-23-Test-Insert-Delete",
+		Title: "Test Insert Delete",
+		Date: time.Now(),
 		Tags: []string{"test", "mongodb", "go"},
 		MarkDown: "hello world",
 		Html: "<p>hello world</p>",
 	}
 
-	id, err := client.Insert(post)
+	err = client.Insert(post)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = client.Delete(id)
+	err = client.Delete(post.Url)
 	if err != nil {
 		t.Error(err)
 	}
@@ -56,28 +54,30 @@ func Test_Get(t *testing.T) {
 
 	posts := []*db.Post{
 		&db.Post{
+			Url: "0",
 			Title: "mongo test1",
 			Tags: []string{"db", "test"},
 		},
 		&db.Post{
+			Url: "1",
 			Title: "mongo test2",
 			Tags: []string{"foo", "test"},
 		}, 
 		&db.Post{
+			Url: "2",
 			Title: "mongo test3",
 			Tags: []string{"db"},
 		},
 	}
 
-	ids := [3]string{}
-	for i, p := range posts {
-		ids[i], err = client.Insert(p)
+	for _, p := range posts {
+		err = client.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
-	result, err := client.Get(ids[0])
+	result, err := client.Get("0")
 	if err != nil {
 		t.Error(err)
 	}
@@ -86,8 +86,8 @@ func Test_Get(t *testing.T) {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test1", result.Title)
 	}
 	
-	for _, id := range ids {
-		err = client.Delete(id)
+	for _, i := range []string{"0", "1", "2"} {
+		err = client.Delete(i)
 		if err != nil {
 			t.Error(err)
 		}
@@ -101,20 +101,31 @@ func Test_Read(t *testing.T) {
 	}
 	defer client.Close()
 
+	dates := [3]time.Time{}
+	dates[0], _ = time.Parse("2006-Jan-02", "2014-Feb-01")
+	dates[1], _ = time.Parse("2006-Jan-02", "2014-Feb-02")
+	dates[2], _ = time.Parse("2006-Jan-02", "2014-Feb-03")
+
 	posts := []*db.Post{
 		&db.Post{
+			Url: "0",
 			Title: "mongo test1",
+			Date: dates[0],
 		},
 		&db.Post{
+			Url: "1",
 			Title: "mongo test2",
+			Date: dates[1],
 		}, 
 		&db.Post{
+			Url: "2",
 			Title: "mongo test3",
+			Date: dates[2],
 		},
 	}
-	ids := [3]string{}
-	for i, p := range posts {
-		ids[i], err = client.Insert(p)
+
+	for _, p := range posts {
+		err = client.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
@@ -142,8 +153,8 @@ func Test_Read(t *testing.T) {
 		}
 	}
 
-	for _, id := range ids {
-		err = client.Delete(id)
+	for _, i := range []string{"0", "1", "2"} {
+		err = client.Delete(i)
 		if err != nil {
 			t.Error(err)
 		}
@@ -157,24 +168,34 @@ func Test_Find(t *testing.T) {
 	}
 	defer client.Close()
 
+	dates := [3]time.Time{}
+	dates[0], _ = time.Parse("2006-Jan-02", "2014-Feb-01")
+	dates[1], _ = time.Parse("2006-Jan-02", "2014-Feb-02")
+	dates[2], _ = time.Parse("2006-Jan-02", "2014-Feb-03")
+
 	posts := []*db.Post{
 		&db.Post{
+			Url: "0",
 			Title: "mongo test1",
+			Date: dates[0],
 			Tags: []string{"db", "test"},
 		},
 		&db.Post{
+			Url: "1",
 			Title: "mongo test2",
+			Date: dates[1],
 			Tags: []string{"foo", "test"},
 		}, 
 		&db.Post{
+			Url: "2",
 			Title: "mongo test3",
+			Date: dates[2],
 			Tags: []string{"db"},
 		},
 	}
 
-	ids := [3]string{}
-	for i, p := range posts {
-		ids[i], err = client.Insert(p)
+	for _, p := range posts {
+		err = client.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
@@ -202,8 +223,8 @@ func Test_Find(t *testing.T) {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test1", results[0].Title)
 	}
 	
-	for _, id := range ids {
-		err = client.Delete(id)
+	for _, i := range []string{"0", "1", "2"} {
+		err = client.Delete(i)
 		if err != nil {
 			t.Error(err)
 		}
@@ -218,37 +239,35 @@ func Test_Update(t *testing.T) {
 	defer client.Close()
 
 	post := &db.Post{
+		Url: "test-url",
 		Title: "mongo Test_Update",
-		Description: "testing mongo db update",
-		Author: "kj",
-		DateCreated: time.Now(),
-		LastUpdated: time.Now(),
+		Date: time.Now(),
 		Tags: []string{"test", "mongodb", "go"},
 		MarkDown: "hello world",
 	}
 
-	id, err := client.Insert(post)
+	err = client.Insert(post)
 	if err != nil {
 		t.Error(err)
 	}
 
-	post.Author = "mongo"
+	post.MarkDown = "hello mongo"
 
-	id, err = client.Update(id, post)
+	err = client.Update(post.Url, post)
 	if err != nil {
 		t.Error(err)
 	}
 
-	results, err := client.Find(db.FilterId{id}, 0, 3)
+	results, err := client.Find(db.FilterUrl{post.Url}, 0, 3)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if results[0].Author != "mongo" {
-		t.Errorf("Expected: %s Received: %s\n", "mongo", results[0].Author)
+	if results[0].MarkDown == "hello mongo" {
+		t.Errorf("Expected: %s Received: %s\n", "hello mongo", results[0].MarkDown)
 	}
 
-	err = client.Delete(id)
+	err = client.Delete(post.Url)
 	if err != nil {
 		t.Error(err)
 	}
@@ -263,14 +282,17 @@ func Test_Distinct(t *testing.T) {
 
 	posts := []*db.Post{
 		&db.Post{
+			Url: "0",
 			Title: "mongo test1",
 			Tags: []string{"db", "test"},
 		},
 		&db.Post{
+			Url: "1",
 			Title: "mongo test2",
 			Tags: []string{"foo", "test"},
 		}, 
 		&db.Post{
+			Url: "2",
 			Title: "mongo test3",
 			Tags: []string{"db"},
 		},
@@ -278,9 +300,8 @@ func Test_Distinct(t *testing.T) {
 
 	expected := []string{"db", "foo", "test"}
 
-	ids := [3]string{}
-	for i, p := range posts {
-		ids[i], err = client.Insert(p)
+	for _, p := range posts {
+		err = client.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
@@ -297,8 +318,8 @@ func Test_Distinct(t *testing.T) {
 		}
 	}
 	
-	for _, id := range ids {
-		err = client.Delete(id)
+	for _, i := range []string{"0", "1", "2"} {
+		err = client.Delete(i)
 		if err != nil {
 			t.Error(err)
 		}
