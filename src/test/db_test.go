@@ -7,7 +7,7 @@ import (
 )
 
 func Test_Connect_DB_Close(t *testing.T) {
-	client, err := db.Connect_DB("test")
+	client, err := db.Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -19,11 +19,16 @@ func Test_Connect_DB_Close(t *testing.T) {
 }
 
 func Test_Insert_Delete(t *testing.T) {
-	client, err := db.Connect_DB("test")
+	client, err := db.Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer client.Close()
+
+	coll, err := client.Collection("test")
+	if err != nil {
+		t.Error(err)
+	}
 
 	post := &db.Post{
 		Url: "2023-03-23-Test-Insert-Delete",
@@ -34,23 +39,28 @@ func Test_Insert_Delete(t *testing.T) {
 		Html: "<p>hello world</p>",
 	}
 
-	err = client.Insert(post)
+	err = coll.Insert(post)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = client.Delete(post.Url)
+	err = coll.Delete(post.Url)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_Get(t *testing.T) {
-	client, err := db.Connect_DB("test")
+	client, err := db.Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer client.Close()
+
+	coll, err := client.Collection("test")
+	if err != nil {
+		t.Error(err)
+	}
 
 	posts := []*db.Post{
 		&db.Post{
@@ -71,13 +81,13 @@ func Test_Get(t *testing.T) {
 	}
 
 	for _, p := range posts {
-		err = client.Insert(p)
+		err = coll.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
-	result, err := client.Get("0")
+	result, err := coll.Get("0")
 	if err != nil {
 		t.Error(err)
 	}
@@ -87,7 +97,7 @@ func Test_Get(t *testing.T) {
 	}
 	
 	for _, i := range []string{"0", "1", "2"} {
-		err = client.Delete(i)
+		err = coll.Delete(i)
 		if err != nil {
 			t.Error(err)
 		}
@@ -95,11 +105,16 @@ func Test_Get(t *testing.T) {
 }
 
 func Test_Read(t *testing.T) {
-	client, err := db.Connect_DB("test")
+	client, err := db.Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer client.Close()
+
+	coll, err := client.Collection("test")
+	if err != nil {
+		t.Error(err)
+	}
 
 	dates := [3]time.Time{}
 	dates[0], _ = time.Parse("2006-Jan-02", "2014-Feb-01")
@@ -125,13 +140,13 @@ func Test_Read(t *testing.T) {
 	}
 
 	for _, p := range posts {
-		err = client.Insert(p)
+		err = coll.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
-	results, err := client.Read(0, 3)
+	results, err := coll.Read(0, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -142,7 +157,7 @@ func Test_Read(t *testing.T) {
 		}
 	}
 
-	results, err = client.Read(1, 3)
+	results, err = coll.Read(1, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -154,7 +169,7 @@ func Test_Read(t *testing.T) {
 	}
 
 	for _, i := range []string{"0", "1", "2"} {
-		err = client.Delete(i)
+		err = coll.Delete(i)
 		if err != nil {
 			t.Error(err)
 		}
@@ -162,11 +177,16 @@ func Test_Read(t *testing.T) {
 }
 
 func Test_Find(t *testing.T) {
-	client, err := db.Connect_DB("test")
+	client, err := db.Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer client.Close()
+
+	coll, err := client.Collection("test")
+	if err != nil {
+		t.Error(err)
+	}
 
 	dates := [3]time.Time{}
 	dates[0], _ = time.Parse("2006-Jan-02", "2014-Feb-01")
@@ -195,13 +215,13 @@ func Test_Find(t *testing.T) {
 	}
 
 	for _, p := range posts {
-		err = client.Insert(p)
+		err = coll.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
-	results, err := client.Find(db.FilterTag{"db"}, 0, 3)
+	results, err := coll.Find(db.FilterTag{"db"}, 0, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -214,7 +234,7 @@ func Test_Find(t *testing.T) {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test1", results[1].Title)
 	}
 
-	results, err = client.Find(db.FilterTag{"test"}, 1, 3)
+	results, err = coll.Find(db.FilterTag{"test"}, 1, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -224,7 +244,7 @@ func Test_Find(t *testing.T) {
 	}
 	
 	for _, i := range []string{"0", "1", "2"} {
-		err = client.Delete(i)
+		err = coll.Delete(i)
 		if err != nil {
 			t.Error(err)
 		}
@@ -232,11 +252,16 @@ func Test_Find(t *testing.T) {
 }
 
 func Test_Update(t *testing.T) {
-	client, err := db.Connect_DB("test")
+	client, err := db.Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer client.Close()
+
+	coll, err := client.Collection("test")
+	if err != nil {
+		t.Error(err)
+	}
 
 	post := &db.Post{
 		Url: "test-url",
@@ -246,19 +271,19 @@ func Test_Update(t *testing.T) {
 		MarkDown: "hello world",
 	}
 
-	err = client.Insert(post)
+	err = coll.Insert(post)
 	if err != nil {
 		t.Error(err)
 	}
 
 	post.MarkDown = "hello mongo"
 
-	err = client.Update(post.Url, post)
+	err = coll.Update(post.Url, post)
 	if err != nil {
 		t.Error(err)
 	}
 
-	results, err := client.Find(db.FilterUrl{post.Url}, 0, 3)
+	results, err := coll.Find(db.FilterUrl{post.Url}, 0, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -267,18 +292,23 @@ func Test_Update(t *testing.T) {
 		t.Errorf("Expected: %s Received: %s\n", "hello mongo", results[0].MarkDown)
 	}
 
-	err = client.Delete(post.Url)
+	err = coll.Delete(post.Url)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_Distinct(t *testing.T) {
-	client, err := db.Connect_DB("test")
+	client, err := db.Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer client.Close()
+
+	coll, err := client.Collection("test")
+	if err != nil {
+		t.Error(err)
+	}
 
 	posts := []*db.Post{
 		&db.Post{
@@ -301,13 +331,13 @@ func Test_Distinct(t *testing.T) {
 	expected := []string{"db", "foo", "test"}
 
 	for _, p := range posts {
-		err = client.Insert(p)
+		err = coll.Insert(p)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
-	results, err := client.Distinct("tags")
+	results, err := coll.Distinct("tags")
 	if err != nil {
 		t.Error(err)
 	}
@@ -319,7 +349,7 @@ func Test_Distinct(t *testing.T) {
 	}
 	
 	for _, i := range []string{"0", "1", "2"} {
-		err = client.Delete(i)
+		err = coll.Delete(i)
 		if err != nil {
 			t.Error(err)
 		}

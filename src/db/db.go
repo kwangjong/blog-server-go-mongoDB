@@ -19,12 +19,15 @@ const (
 	MONGO_URL = "mongodb+srv://cluster0.rtswz75.mongodb.net"
 )
 
-type Mongo_Client struct {
-	client   *mongo.Client
-	postColl *mongo.Collection
+type DBClient struct {
+	client	*mongo.Client
 }
 
-func Connect_DB(collection string) (*Mongo_Client, error) {
+type DBCollection struct {
+	collection *mongo.Collection
+}
+
+func Connect_DB() (*DBClient, error) {
 	key_file, err := os.Open(MONGO_KEY)
     if err != nil {
         return nil, err
@@ -51,28 +54,30 @@ func Connect_DB(collection string) (*Mongo_Client, error) {
 	}
 	log.Println("Mongo db successfully pinged")
 
-	return &Mongo_Client {
-		client:    client,
-		postColl:  client.Database("db").Collection(collection),
-	}, nil
+	return &DBClient{client}, nil
 }
 
-func (mongo_client *Mongo_Client) Close() error {
-	if mongo_client.client == nil {
+func (db *DBClient) Collection(collection string) (*DBCollection, error) {
+	if db.client == nil {
+		return nil, errors.New("Mongo db not connected")
+	}
+
+	return &DBCollection{db.client.Database("db").Collection(collection)}, nil
+}
+
+func (db *DBClient) Close() error {
+	if db.client == nil {
 		return errors.New("Mongo db not connected")
 	}
 
-	err := mongo_client.client.Disconnect(context.TODO())
+	err := db.client.Disconnect(context.TODO())
 	log.Println("Mongo db connection closed")
 	
 	return err
 }
 
-func (mongo_client *Mongo_Client) Insert(post *Post) error {
-	if mongo_client.client == nil {
-		return errors.New("Mongo db not connected")
-	}
-	coll := mongo_client.postColl
+func (db_coll *DBCollection) Insert(post *Post) error {
+	coll := db_coll.collection
 	
 	_, err := coll.InsertOne(context.TODO(), *post)
 	if err != nil {
@@ -84,14 +89,10 @@ func (mongo_client *Mongo_Client) Insert(post *Post) error {
 	return nil
 }
 
-func (mongo_client *Mongo_Client) Delete(url string) error {
-	if mongo_client.client == nil {
-		return errors.New("Mongo db not connected")
-	}
-	coll := mongo_client.postColl
+func (db_coll *DBCollection) Delete(url string) error {
+	coll := db_coll.collection
 	
 	filter := FilterUrl{url}
-
 	_, err := coll.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err
@@ -100,11 +101,8 @@ func (mongo_client *Mongo_Client) Delete(url string) error {
 	return nil
 }
 
-func (mongo_client *Mongo_Client) Update(url string, post *Post) error {
-	if mongo_client.client == nil {
-		return errors.New("Mongo db not connected")
-	}
-	coll := mongo_client.postColl
+func (db_coll *DBCollection) Update(url string, post *Post) error {
+	coll := db_coll.collection
 
 	filter := FilterUrl{url}
 	update := bson.D{{"$set", *post}}
@@ -119,12 +117,9 @@ func (mongo_client *Mongo_Client) Update(url string, post *Post) error {
 	return nil
 }
 
-func (mongo_client *Mongo_Client) Get(url string) (*Post, error) {
-	if mongo_client.client == nil {
-		return nil, errors.New("Mongo db not connected")
-	}
+func (db_coll *DBCollection) Get(url string) (*Post, error) {
+	coll := db_coll.collection
 
-	coll := mongo_client.postColl
 	filter := FilterUrl{url}
 	opts := options.Find()
 	cursor, err := coll.Find(context.TODO(), filter, opts)
@@ -137,16 +132,16 @@ func (mongo_client *Mongo_Client) Get(url string) (*Post, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(results) == 0 {
+		return nil, errors.New("page not found")
+	}
 	log.Printf("Found documents with url: %v", url)
 	return results[0], err
 }
 
-func (mongo_client *Mongo_Client) Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
-	if mongo_client.client == nil {
-		return nil, errors.New("Mongo db not connected")
-	}
-
-	coll := mongo_client.postColl
+func (db_coll *DBCollection) Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
+	coll := db_coll.collection
+	
 	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
 		{"url", 1}, 
 		{"title", 1},
@@ -168,12 +163,9 @@ func (mongo_client *Mongo_Client) Find(filter interface{}, skip int64, numPost i
 	return results, err
 }
 
-func (mongo_client *Mongo_Client) Read(skip int64, numPost int64) ([]*Post, error) {
-	if mongo_client.client == nil {
-		return nil, errors.New("Mongo db not connected")
-	}
+func (db_coll *DBCollection) Read(skip int64, numPost int64) ([]*Post, error) {
+	coll := db_coll.collection
 
-	coll := mongo_client.postColl
 	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
 			{"url", 1}, 
 			{"title", 1},
@@ -194,13 +186,10 @@ func (mongo_client *Mongo_Client) Read(skip int64, numPost int64) ([]*Post, erro
 	return results, err
 }
 
-func (mongo_client *Mongo_Client) Distinct(fieldName string) ([]interface{}, error) {
+func (db_coll *DBCollection) Distinct(fieldName string) ([]interface{}, error) {
 	results := []interface{}{}
-	if mongo_client.client == nil {
-		return results, errors.New("Mongo db not connected")
-	}
+	coll := db_coll.collection
 
-	coll := mongo_client.postColl
 	results, err := coll.Distinct(context.TODO(), fieldName, bson.D{})
 	if err != nil {
     	return results, err
