@@ -3,6 +3,7 @@ package server
 import (
 	"io"
 	"os"
+	"errors"
 	"os/signal"
 	"syscall"
 	"log"
@@ -12,13 +13,18 @@ import (
 )
 
 const (
-	POSTPATH = "/blog/"
+	BLOGPATH = "/blog/"
 )
 
 var PostDB	*db.DBCollection
 
-func GetPost(w http.ResponseWriter, r *http.Request, url string) (error, int)  {
-	post, err := PostDB.Get(url)
+func Get_Blog(w http.ResponseWriter, r *http.Request) (error, int)  {
+	post_url := r.URL.Path[len(BLOGPATH):]
+	if post_url == "" {
+		return errors.New("page not found"), http.StatusNotFound
+	}
+
+	post, err := PostDB.Get(post_url)
 	if err != nil {
 		return err, http.StatusInternalServerError
 	}
@@ -39,21 +45,29 @@ func GetPost(w http.ResponseWriter, r *http.Request, url string) (error, int)  {
 	return nil, 0;
 }
 
-func Post(w http.ResponseWriter, r *http.Request) {
-	post_url := r.URL.Path[len(POSTPATH):]
-	if post_url == "" {
-		log.Printf("Error: page not found\n")
-		http.Error(w, "page not found", http.StatusNotFound)
-		return
+func Post_Blog(w http.ResponseWriter, r *http.Request, url string) (error, int)  {
+	var post db.Post
+
+	err := json.NewDecoder(r.Body).Decode(&post)
+	if err != nil {
+		return err, http.StatusBadRequest
 	}
 
+	err = PostDB.Insert(&post)
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+	return nil, 0;
+}
+
+func Blog(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s: %s", r.Method, r.URL.Path)
 	
 	var err error
 	var err_code int
 	switch r.Method {
 	case http.MethodGet:
-		err, err_code = GetPost(w, r, post_url)
+		err, err_code = Get_Blog(w, r)
 	default:
 		return
 	}
@@ -72,7 +86,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 // }
 
 func Run() {
-	http.HandleFunc(POSTPATH, Post)
+	http.HandleFunc(BLOGPATH, Blog)
 
 	log.Printf("Starting server...\n")
 	client, err := db.Connect_DB()
