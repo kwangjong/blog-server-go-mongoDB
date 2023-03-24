@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	MONGO_KEY = "/home/kwangjong/kwangjong.github.io/key.json"
+	MONGO_KEY = "../../kwangjong.github.io/key.json"
 	MONGO_URL = "mongodb+srv://cluster0.rtswz75.mongodb.net"
 )
 
 type DBClient struct {
-	client	*mongo.Client
+	client *mongo.Client
 }
 
 type DBCollection struct {
@@ -29,18 +29,18 @@ type DBCollection struct {
 
 func Connect_DB() (*DBClient, error) {
 	key_file, err := os.Open(MONGO_KEY)
-    if err != nil {
-        return nil, err
-    }
-    defer key_file.Close()
+	if err != nil {
+		return nil, err
+	}
+	defer key_file.Close()
 
-    key_byte, _ := ioutil.ReadAll(key_file)
+	key_byte, _ := ioutil.ReadAll(key_file)
 
-    var credential options.Credential
-    json.Unmarshal([]byte(key_byte), &credential)
+	var credential options.Credential
+	json.Unmarshal([]byte(key_byte), &credential)
 
 	opts := options.Client().ApplyURI(MONGO_URL).
-	SetAuth(credential)
+		SetAuth(credential)
 
 	client, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
@@ -72,13 +72,13 @@ func (db *DBClient) Close() error {
 
 	err := db.client.Disconnect(context.TODO())
 	log.Println("Mongo db connection closed")
-	
+
 	return err
 }
 
 func (db_coll *DBCollection) Insert(post *Post) error {
 	coll := db_coll.collection
-	
+
 	_, err := coll.InsertOne(context.TODO(), *post)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (db_coll *DBCollection) Insert(post *Post) error {
 
 func (db_coll *DBCollection) Delete(url string) error {
 	coll := db_coll.collection
-	
+
 	filter := FilterUrl{url}
 	_, err := coll.DeleteOne(context.TODO(), filter)
 	if err != nil {
@@ -111,7 +111,7 @@ func (db_coll *DBCollection) Update(url string, post *Post) error {
 	if err != nil {
 		return err
 	}
-	
+
 	log.Printf("Updated document with url: %s\n", url)
 
 	return nil
@@ -141,9 +141,9 @@ func (db_coll *DBCollection) Get(url string) (*Post, error) {
 
 func (db_coll *DBCollection) Find(filter interface{}, skip int64, numPost int64) ([]*Post, error) {
 	coll := db_coll.collection
-	
+
 	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
-		{"url", 1}, 
+		{"url", 1},
 		{"title", 1},
 		{"author", 1},
 		{"date", 1},
@@ -167,11 +167,11 @@ func (db_coll *DBCollection) Read(skip int64, numPost int64) ([]*Post, error) {
 	coll := db_coll.collection
 
 	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
-			{"url", 1}, 
-			{"title", 1},
-			{"date", 1},
-			{"tags", 1},
-		})
+		{"url", 1},
+		{"title", 1},
+		{"date", 1},
+		{"tags", 1},
+	})
 	cursor, err := coll.Find(context.TODO(), bson.D{}, opts)
 	if err != nil {
 		return nil, err
@@ -192,7 +192,7 @@ func (db_coll *DBCollection) Distinct(fieldName string) ([]interface{}, error) {
 
 	results, err := coll.Distinct(context.TODO(), fieldName, bson.D{})
 	if err != nil {
-    	return results, err
+		return results, err
 	}
 	log.Printf("Found %d distinct %s\n", len(results), fieldName)
 	return results, nil
