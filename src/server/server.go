@@ -1,14 +1,15 @@
 package server
 
 import (
-	"io"
-	"os"
+	"encoding/json"
 	"errors"
-	"os/signal"
-	"syscall"
+	"io"
 	"log"
 	"net/http"
-	"encoding/json"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/kwangjong/kwangjong.github.io/db"
 )
 
@@ -16,9 +17,9 @@ const (
 	BLOGPATH = "/blog/"
 )
 
-var PostDB	*db.DBCollection
+var PostDB *db.DBCollection
 
-func Get_Blog(w http.ResponseWriter, r *http.Request) (error, int)  {
+func Get_Blog(w http.ResponseWriter, r *http.Request) (error, int) {
 	post_url := r.URL.Path[len(BLOGPATH):]
 	if post_url == "" {
 		return errors.New("page not found"), http.StatusNotFound
@@ -31,7 +32,7 @@ func Get_Blog(w http.ResponseWriter, r *http.Request) (error, int)  {
 
 	post_json, err := json.Marshal(post)
 	if err != nil {
-		switch(err.Error()) {
+		switch err.Error() {
 		case "page not found":
 			return err, http.StatusNotFound
 		default:
@@ -40,34 +41,44 @@ func Get_Blog(w http.ResponseWriter, r *http.Request) (error, int)  {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	io.WriteString(w, string(post_json));
+	io.WriteString(w, string(post_json))
 
-	return nil, 0;
+	return nil, 0
 }
 
-func Post_Blog(w http.ResponseWriter, r *http.Request, url string) (error, int)  {
+func Post_Blog(w http.ResponseWriter, r *http.Request) (error, int) {
 	var post db.Post
+
+	log.Printf("%s", r.Body)
 
 	err := json.NewDecoder(r.Body).Decode(&post)
 	if err != nil {
 		return err, http.StatusBadRequest
 	}
 
+	log.Printf("%s", post)
+
 	err = PostDB.Insert(&post)
 	if err != nil {
 		return err, http.StatusInternalServerError
 	}
-	return nil, 0;
+	return nil, 0
 }
 
 func Blog(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s: %s", r.Method, r.URL.Path)
-	
+
 	var err error
 	var err_code int
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	switch r.Method {
 	case http.MethodGet:
 		err, err_code = Get_Blog(w, r)
+	case http.MethodPost:
+		err, err_code = Post_Blog(w, r)
 	default:
 		return
 	}
@@ -78,7 +89,7 @@ func Blog(w http.ResponseWriter, r *http.Request) {
 }
 
 // func Blog(w http.ResposeWriter, r *http.Request) {
-	
+
 // }
 
 // func Tags() {
@@ -108,10 +119,9 @@ func Run() {
 		client.Close()
 		os.Exit(0)
 	}()
-	
+
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
-
 
 }
