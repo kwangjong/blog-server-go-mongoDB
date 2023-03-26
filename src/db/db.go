@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	MONGO_KEY = "key.json"
+	MONGO_KEY = "/Users/kwangjong/Programming/blog-server-go-mongoDB/key.json"
 	MONGO_URL = "mongodb+srv://cluster0.rtswz75.mongodb.net"
 )
 
@@ -101,10 +101,10 @@ func (db_coll *DBCollection) Delete(url string) error {
 	return nil
 }
 
-func (db_coll *DBCollection) Update(url string, post *Post) error {
+func (db_coll *DBCollection) Update(post *Post) error {
 	coll := db_coll.collection
 
-	filter := FilterUrl{url}
+	filter := FilterId{post.Id}
 	update := bson.D{{"$set", *post}}
 
 	_, err := coll.UpdateOne(context.TODO(), filter, update)
@@ -112,7 +112,7 @@ func (db_coll *DBCollection) Update(url string, post *Post) error {
 		return err
 	}
 
-	log.Printf("Updated document with url: %s\n", url)
+	log.Printf("Updated document with _id: %s\n", post.Id)
 
 	return nil
 }

@@ -3,6 +3,7 @@ package test
 import (
 	"testing"
 	"time"
+
 	"github.com/kwangjong/kwangjong.github.io/db"
 )
 
@@ -31,12 +32,12 @@ func Test_Insert_Delete(t *testing.T) {
 	}
 
 	post := &db.Post{
-		Url: "2023-03-23-Test-Insert-Delete",
-		Title: "Test Insert Delete",
-		Date: time.Now(),
-		Tags: []string{"test", "mongodb", "go"},
+		Url:      "2023-03-23-Test-Insert-Delete",
+		Title:    "Test Insert Delete",
+		Date:     time.Now(),
+		Tags:     []string{"test", "mongodb", "go"},
 		MarkDown: "hello world",
-		Html: "<p>hello world</p>",
+		Html:     "<p>hello world</p>",
 	}
 
 	err = coll.Insert(post)
@@ -64,19 +65,19 @@ func Test_Get(t *testing.T) {
 
 	posts := []*db.Post{
 		&db.Post{
-			Url: "0",
+			Url:   "0",
 			Title: "mongo test1",
-			Tags: []string{"db", "test"},
+			Tags:  []string{"db", "test"},
 		},
 		&db.Post{
-			Url: "1",
+			Url:   "1",
 			Title: "mongo test2",
-			Tags: []string{"foo", "test"},
-		}, 
+			Tags:  []string{"foo", "test"},
+		},
 		&db.Post{
-			Url: "2",
+			Url:   "2",
 			Title: "mongo test3",
-			Tags: []string{"db"},
+			Tags:  []string{"db"},
 		},
 	}
 
@@ -95,7 +96,7 @@ func Test_Get(t *testing.T) {
 	if result.Title != "mongo test1" {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test1", result.Title)
 	}
-	
+
 	for _, i := range []string{"0", "1", "2"} {
 		err = coll.Delete(i)
 		if err != nil {
@@ -123,19 +124,19 @@ func Test_Read(t *testing.T) {
 
 	posts := []*db.Post{
 		&db.Post{
-			Url: "0",
+			Url:   "0",
 			Title: "mongo test1",
-			Date: dates[0],
+			Date:  dates[0],
 		},
 		&db.Post{
-			Url: "1",
+			Url:   "1",
 			Title: "mongo test2",
-			Date: dates[1],
-		}, 
+			Date:  dates[1],
+		},
 		&db.Post{
-			Url: "2",
+			Url:   "2",
 			Title: "mongo test3",
-			Date: dates[2],
+			Date:  dates[2],
 		},
 	}
 
@@ -153,7 +154,7 @@ func Test_Read(t *testing.T) {
 
 	for i, p := range posts {
 		if p.Title != results[len(results)-1-i].Title {
-		 	t.Errorf("Expected: %s Received: %s\n",p.Title, results[len(results)-1-i].Title)
+			t.Errorf("Expected: %s Received: %s\n", p.Title, results[len(results)-1-i].Title)
 		}
 	}
 
@@ -164,7 +165,7 @@ func Test_Read(t *testing.T) {
 
 	for i, p := range posts[:2] {
 		if p.Title != results[len(results)-1-i].Title {
-		 	t.Errorf("Expected: %s Received: %s\n", p.Title, results[len(results)-1-i].Title)
+			t.Errorf("Expected: %s Received: %s\n", p.Title, results[len(results)-1-i].Title)
 		}
 	}
 
@@ -195,22 +196,22 @@ func Test_Find(t *testing.T) {
 
 	posts := []*db.Post{
 		&db.Post{
-			Url: "0",
+			Url:   "0",
 			Title: "mongo test1",
-			Date: dates[0],
-			Tags: []string{"db", "test"},
+			Date:  dates[0],
+			Tags:  []string{"db", "test"},
 		},
 		&db.Post{
-			Url: "1",
+			Url:   "1",
 			Title: "mongo test2",
-			Date: dates[1],
-			Tags: []string{"foo", "test"},
-		}, 
+			Date:  dates[1],
+			Tags:  []string{"foo", "test"},
+		},
 		&db.Post{
-			Url: "2",
+			Url:   "2",
 			Title: "mongo test3",
-			Date: dates[2],
-			Tags: []string{"db"},
+			Date:  dates[2],
+			Tags:  []string{"db"},
 		},
 	}
 
@@ -229,7 +230,7 @@ func Test_Find(t *testing.T) {
 	if results[0].Title != "mongo test3" {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test3", results[0].Title)
 	}
-	
+
 	if results[1].Title != "mongo test1" {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test1", results[1].Title)
 	}
@@ -242,7 +243,7 @@ func Test_Find(t *testing.T) {
 	if results[0].Title != "mongo test1" {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test1", results[0].Title)
 	}
-	
+
 	for _, i := range []string{"0", "1", "2"} {
 		err = coll.Delete(i)
 		if err != nil {
@@ -264,10 +265,10 @@ func Test_Update(t *testing.T) {
 	}
 
 	post := &db.Post{
-		Url: "test-url",
-		Title: "mongo Test_Update",
-		Date: time.Now(),
-		Tags: []string{"test", "mongodb", "go"},
+		Url:      "test-url",
+		Title:    "mongo Test_Update",
+		Date:     time.Now(),
+		Tags:     []string{"test", "mongodb", "go"},
 		MarkDown: "hello world",
 	}
 
@@ -276,9 +277,14 @@ func Test_Update(t *testing.T) {
 		t.Error(err)
 	}
 
-	post.MarkDown = "hello mongo"
+	received, err := coll.Get(post.Url)
+	if err != nil {
+		t.Error(err)
+	}
 
-	err = coll.Update(post.Url, post)
+	received.MarkDown = "hello mongo"
+
+	err = coll.Update(received)
 	if err != nil {
 		t.Error(err)
 	}
@@ -312,19 +318,19 @@ func Test_Distinct(t *testing.T) {
 
 	posts := []*db.Post{
 		&db.Post{
-			Url: "0",
+			Url:   "0",
 			Title: "mongo test1",
-			Tags: []string{"db", "test"},
+			Tags:  []string{"db", "test"},
 		},
 		&db.Post{
-			Url: "1",
+			Url:   "1",
 			Title: "mongo test2",
-			Tags: []string{"foo", "test"},
-		}, 
+			Tags:  []string{"foo", "test"},
+		},
 		&db.Post{
-			Url: "2",
+			Url:   "2",
 			Title: "mongo test3",
-			Tags: []string{"db"},
+			Tags:  []string{"db"},
 		},
 	}
 
@@ -347,7 +353,7 @@ func Test_Distinct(t *testing.T) {
 			t.Errorf("Expected: %s Received: %s\n", expected[i], tag)
 		}
 	}
-	
+
 	for _, i := range []string{"0", "1", "2"} {
 		err = coll.Delete(i)
 		if err != nil {
