@@ -163,27 +163,33 @@ func (db_coll *DBCollection) Find(filter interface{}, skip int64, numPost int64)
 	return results, err
 }
 
-func (db_coll *DBCollection) Read(skip int64, numPost int64) ([]*Post, error) {
+func (db_coll *DBCollection) Read(skip int64, numPost int64) ([]*Post, bool, error) {
 	coll := db_coll.collection
 
-	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost).SetProjection(bson.D{
+	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost + 1).SetProjection(bson.D{
 		{"url", 1},
 		{"title", 1},
 		{"date", 1},
 		{"tags", 1},
 	})
+
 	cursor, err := coll.Find(context.TODO(), bson.D{}, opts)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	var results []*Post
 	err = cursor.All(context.TODO(), &results)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	log.Printf("Read %d documents\n", len(results))
-	return results, err
+
+	if len(results) < int(numPost)+1 {
+		return results, false, nil
+	}
+
+	return results[:len(results)-1], true, nil
 }
 
 func (db_coll *DBCollection) Distinct(fieldName string) ([]interface{}, error) {

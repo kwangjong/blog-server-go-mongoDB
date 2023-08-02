@@ -3,18 +3,22 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/kwangjong/kwangjong.github.io/db"
 )
 
 const (
-	BLOGPATH = "/blog/"
+	BLOGPATH     = "/blog/"
+	BLOGLISTPATH = "/blog/list"
+	TAGSLISTPATH = "/tags/list"
 )
 
 var PostDB *db.DBCollection
@@ -49,7 +53,20 @@ func Get_Blog(w http.ResponseWriter, r *http.Request) (error, int) {
 func Post_Blog(w http.ResponseWriter, r *http.Request) (error, int) {
 	var post db.Post
 
-	log.Printf("%s", r.Body)
+	err := json.NewDecoder(r.Body).Decode(&post)
+	if err != nil {
+		return err, http.StatusBadRequest
+	}
+
+	err = PostDB.Insert(&post)
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+	return nil, 0
+}
+
+func Put_Blog(w http.ResponseWriter, r *http.Request) (error, int) {
+	var post db.Post
 
 	err := json.NewDecoder(r.Body).Decode(&post)
 	if err != nil {
@@ -58,7 +75,7 @@ func Post_Blog(w http.ResponseWriter, r *http.Request) (error, int) {
 
 	log.Printf("%s", post)
 
-	err = PostDB.Insert(&post)
+	err = PostDB.Update(&post)
 	if err != nil {
 		return err, http.StatusInternalServerError
 	}
@@ -88,16 +105,76 @@ func Blog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func Blog(w http.ResposeWriter, r *http.Request) {
+func BlogList(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s: %s", r.Method, r.URL.Path)
 
-// }
+	var err error
+	var err_code int
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-// func Tags() {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
 
-// }
+	skip, err := strconv.ParseInt(r.URL.Query().Get("skip"), 10, 64)
+	numPost, err := strconv.ParseInt(r.URL.Query().Get("numPost"), 10, 64)
+	if err != nil {
+		log.Printf("Error: %s\n", err)
+		http.Error(w, err.Error(), err_code)
+	}
+
+	list, hasNext, err := PostDB.Read(skip, numPost)
+	if err != nil {
+		log.Printf("Error: %s\n", err)
+		http.Error(w, err.Error(), err_code)
+	}
+
+	list_json, err := json.Marshal(list)
+	if err != nil {
+		log.Printf("Error: %s\n", err)
+		http.Error(w, err.Error(), err_code)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	out := fmt.Sprintf("{\"entries\": %s, \"hasNext\": %v}", list_json, hasNext)
+	io.WriteString(w, out)
+}
+
+func TagsList(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s: %s", r.Method, r.URL.Path)
+
+	var err error
+	var err_code int
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+
+	tags, err := PostDB.Distinct("tags")
+	if err != nil {
+		log.Printf("Error: %s\n", err)
+		http.Error(w, err.Error(), err_code)
+	}
+
+	tags_json, err := json.Marshal(tags)
+	if err != nil {
+		log.Printf("Error: %s\n", err)
+		http.Error(w, err.Error(), err_code)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	io.WriteString(w, string(tags_json))
+}
 
 func Run() {
 	http.HandleFunc(BLOGPATH, Blog)
+	http.HandleFunc(BLOGLISTPATH, BlogList)
+	http.HandleFunc(TAGSLISTPATH, TagsList)
 
 	log.Printf("Starting server...\n")
 	client, err := db.Connect_DB()
