@@ -19,6 +19,7 @@ const (
 	BLOGPATH     = "/blog/"
 	BLOGLISTPATH = "/blog/list"
 	TAGSLISTPATH = "/tags/list"
+	AUTHPATH     = "/auth"
 	CERTFILEPATH = "/home/kwangjong/107106.xyz-ssl-bundle/domain.cert.pem"
 	KEYFILEPATH  = "/home/kwangjong/107106.xyz-ssl-bundle/private.key.pem"
 )
@@ -175,8 +176,9 @@ func TagsList(w http.ResponseWriter, r *http.Request) {
 
 func Run() {
 	http.HandleFunc(BLOGPATH, Blog)
-	http.HandleFunc(BLOGLISTPATH, BlogList)
+	http.Handle(BLOGLISTPATH, validateJwt(BlogList))
 	http.HandleFunc(TAGSLISTPATH, TagsList)
+	http.HandleFunc(AUTHPATH, getJwt)
 
 	log.Printf("Starting server...\n")
 	client, err := db.Connect_DB()

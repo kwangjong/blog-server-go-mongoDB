@@ -2,7 +2,10 @@ module github.com/kwangjong/kwangjong.github.io
 
 go 1.21.0
 
-require go.mongodb.org/mongo-driver v1.12.1
+require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	go.mongodb.org/mongo-driver v1.12.1
+)
 
 require (
 	github.com/golang/snappy v0.0.1 // indirect
