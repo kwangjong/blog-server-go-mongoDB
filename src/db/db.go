@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	MONGO_KEY = "/Users/kwangjong/Programming/blog-server-go-mongoDB/key.json"
+	MONGO_KEY = "/home/kwangjong/blog-server-go-mongoDB/key.json"
 	MONGO_URL = "mongodb+srv://cluster0.rtswz75.mongodb.net"
 )
 

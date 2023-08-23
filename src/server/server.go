@@ -19,6 +19,8 @@ const (
 	BLOGPATH     = "/blog/"
 	BLOGLISTPATH = "/blog/list"
 	TAGSLISTPATH = "/tags/list"
+	CERTFILEPATH = "/home/kwangjong/107106.xyz-ssl-bundle/domain.cert.pem"
+	KEYFILEPATH  = "/home/kwangjong/107106.xyz-ssl-bundle/private.key.pem"
 )
 
 var PostDB *db.DBCollection
@@ -87,7 +89,7 @@ func Blog(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	var err_code int
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
@@ -197,7 +199,7 @@ func Run() {
 		os.Exit(0)
 	}()
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServeTLS(":443", CERTFILEPATH, KEYFILEPATH, nil); err != nil {
 		log.Fatal(err)
 	}
 
