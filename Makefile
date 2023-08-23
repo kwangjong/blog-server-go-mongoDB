@@ -1,9 +1,8 @@
 build:
-	go build
-	go build ./...
+	cd src && go build -o ../server
 
 run:
-	./kwangjong.github.io
+	sudo ./server
 
 test:
-	go test ./... -v
+	cd src && go test -v
