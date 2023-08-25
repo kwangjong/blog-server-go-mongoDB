@@ -88,7 +88,17 @@ func Put_Blog(w http.ResponseWriter, r *http.Request) {
 }
 
 func Delete_Blog(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("delete blog tester"))
+	post_url := r.URL.Path[len(BLOGPATH):]
+	if post_url == "" {
+		http.Error(w, "page not found", http.StatusNotFound)
+		return
+	}
+
+	post, err := PostDB.Delete(post_url)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func Blog(w http.ResponseWriter, r *http.Request) {

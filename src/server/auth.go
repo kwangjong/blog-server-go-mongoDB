@@ -1,17 +1,28 @@
 package server
 
 import (
+	"os"
 	"log"
 	"net/http"
 	"time"
 	"errors"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/joho/godotenv"
 )
 
-var SECRET = []byte("SUPER-SECRET-KEY")
-var API_KEY = "1234"
+var SECRET []byte
+var API_KEY string
 
+func LoadSecret() {
+	err := godotenv.Load()
+    if err != nil {
+        log.Fatalf("err loading: %v", err)
+    }
+
+	SECRET = []byte(os.Getenv("JWT_SECRET"))
+	API_KEY = os.Getenv("API_KEY")
+}
 func generateJwt() (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
