@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -26,85 +25,90 @@ const (
 
 var PostDB *db.DBCollection
 
-func Get_Blog(w http.ResponseWriter, r *http.Request) (error, int) {
+func Get_Blog(w http.ResponseWriter, r *http.Request) {
 	post_url := r.URL.Path[len(BLOGPATH):]
 	if post_url == "" {
-		return errors.New("page not found"), http.StatusNotFound
+		http.Error(w, "page not found", http.StatusNotFound)
+		return
 	}
 
 	post, err := PostDB.Get(post_url)
 	if err != nil {
-		return err, http.StatusInternalServerError
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	post_json, err := json.Marshal(post)
 	if err != nil {
 		switch err.Error() {
 		case "page not found":
-			return err, http.StatusNotFound
+			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
-			return err, http.StatusInternalServerError
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	io.WriteString(w, string(post_json))
-
-	return nil, 0
 }
 
-func Post_Blog(w http.ResponseWriter, r *http.Request) (error, int) {
+func Post_Blog(w http.ResponseWriter, r *http.Request) {
 	var post db.Post
 
 	err := json.NewDecoder(r.Body).Decode(&post)
 	if err != nil {
-		return err, http.StatusBadRequest
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = PostDB.Insert(&post)
 	if err != nil {
-		return err, http.StatusInternalServerError
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	return nil, 0
 }
 
-func Put_Blog(w http.ResponseWriter, r *http.Request) (error, int) {
+func Put_Blog(w http.ResponseWriter, r *http.Request) {
 	var post db.Post
 
 	err := json.NewDecoder(r.Body).Decode(&post)
 	if err != nil {
-		return err, http.StatusBadRequest
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	log.Printf("%s", post)
 
 	err = PostDB.Update(&post)
 	if err != nil {
-		return err, http.StatusInternalServerError
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	return nil, 0
+}
+
+func Delete_Blog(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("delete blog tester"))
 }
 
 func Blog(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s: %s", r.Method, r.URL.Path)
 
-	var err error
-	var err_code int
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	switch r.Method {
 	case http.MethodGet:
-		err, err_code = Get_Blog(w, r)
+		Get_Blog(w, r)
 	case http.MethodPost:
-		err, err_code = Post_Blog(w, r)
+		validateJwt(Post_Blog).ServeHTTP(w, r)
+	case http.MethodPut:
+		validateJwt(Put_Blog).ServeHTTP(w, r)
+	case http.MethodDelete:
+		validateJwt(Delete_Blog).ServeHTTP(w, r)
 	default:
 		return
-	}
-	if err != nil {
-		log.Printf("Error: %s\n", err)
-		http.Error(w, err.Error(), err_code)
 	}
 }
 
@@ -176,7 +180,7 @@ func TagsList(w http.ResponseWriter, r *http.Request) {
 
 func Run() {
 	http.HandleFunc(BLOGPATH, Blog)
-	http.Handle(BLOGLISTPATH, validateJwt(BlogList))
+	http.HandleFunc(BLOGLISTPATH, BlogList)
 	http.HandleFunc(TAGSLISTPATH, TagsList)
 	http.HandleFunc(AUTHPATH, getJwt)
 

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"errors"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -31,11 +32,11 @@ func validateJwt(next func(w http.ResponseWriter, r *http.Request)) http.Handler
 			token, err := jwt.Parse(r.Header.Get("Token"), func(token *jwt.Token) (interface{}, error) {
 				_, ok := token.Method.(*jwt.SigningMethodHMAC)
 				if !ok {
-					w.WriteHeader(http.StatusUnauthorized)
-					w.Write([]byte("not authorized"))
+					return nil, errors.New("not authorized")
 				}
 				return SECRET, nil
 			})
+
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte("not authorized: " + err.Error()))
@@ -52,7 +53,8 @@ func validateJwt(next func(w http.ResponseWriter, r *http.Request)) http.Handler
 }
 
 func getJwt(w http.ResponseWriter, r *http.Request) {
-	if r.Header["Api-Key"][0] == API_KEY {
+	_, ok := r.Header["Api-Key"]
+	if ok && r.Header["Api-Key"][0] == API_KEY {
 		token, err := generateJwt()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -60,5 +62,8 @@ func getJwt(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write([]byte(token))
+	} else {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("not authorized"))
 	}
 }
