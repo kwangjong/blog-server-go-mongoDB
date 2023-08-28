@@ -17,6 +17,7 @@ import (
 const (
 	BLOGPATH     = "/blog/"
 	BLOGLISTPATH = "/blog/list"
+	BLOGLISTALLPATH = "/blog/list/all"
 	TAGSLISTPATH = "/tags/list"
 	AUTHPATH     = "/auth"
 	CERTFILEPATH = "/home/kwangjong/107106.xyz-ssl-bundle/domain.cert.pem"
@@ -50,7 +51,7 @@ func Get_Blog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	io.WriteString(w, string(post_json))
+	w.Write(post_json)
 }
 
 func Post_Blog(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +95,7 @@ func Delete_Blog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := PostDB.Delete(post_url)
+	err := PostDB.Delete(post_url)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -140,23 +141,55 @@ func BlogList(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error: %s\n", err)
 		http.Error(w, err.Error(), err_code)
+		return
 	}
 
 	list, hasNext, err := PostDB.Read(skip, numPost)
 	if err != nil {
 		log.Printf("Error: %s\n", err)
 		http.Error(w, err.Error(), err_code)
+		return
 	}
 
 	list_json, err := json.Marshal(list)
 	if err != nil {
 		log.Printf("Error: %s\n", err)
 		http.Error(w, err.Error(), err_code)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	out := fmt.Sprintf("{\"entries\": %s, \"hasNext\": %v}", list_json, hasNext)
 	io.WriteString(w, out)
+}
+
+func BlogListAll(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s: %s", r.Method, r.URL.Path)
+
+	var err error
+	var err_code int
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+
+	tags, err := PostDB.Distinct("url")
+	if err != nil {
+		log.Printf("Error: %s\n", err)
+		http.Error(w, err.Error(), err_code)
+	}
+
+	tags_json, err := json.Marshal(tags)
+	if err != nil {
+		log.Printf("Error: %s\n", err)
+		http.Error(w, err.Error(), err_code)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(tags_json)
 }
 
 func TagsList(w http.ResponseWriter, r *http.Request) {
@@ -185,12 +218,13 @@ func TagsList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	io.WriteString(w, string(tags_json))
+	w.Write(tags_json)
 }
 
 func Run() {
 	http.HandleFunc(BLOGPATH, Blog)
 	http.HandleFunc(BLOGLISTPATH, BlogList)
+	http.HandleFunc(BLOGLISTALLPATH, BlogListAll)
 	http.HandleFunc(TAGSLISTPATH, TagsList)
 	http.HandleFunc(AUTHPATH, getJwt)
 

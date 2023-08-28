@@ -64,6 +64,23 @@ func validateJwt(next func(w http.ResponseWriter, r *http.Request)) http.Handler
 }
 
 func getJwt(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s: %s", r.Method, r.URL.Path)
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Api-Key, Token")
+	
+	if r.Method == http.MethodOptions {
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		validateJwt(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("authorized"))
+		}).ServeHTTP(w,r)
+		return
+	}
+
 	_, ok := r.Header["Api-Key"]
 	if ok && r.Header["Api-Key"][0] == API_KEY {
 		token, err := generateJwt()

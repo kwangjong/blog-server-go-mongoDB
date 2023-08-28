@@ -1,14 +1,12 @@
-package test
+package db
 
 import (
 	"testing"
 	"time"
-
-	"github.com/kwangjong/kwangjong.github.io/db"
 )
 
 func Test_Connect_DB_Close(t *testing.T) {
-	client, err := db.Connect_DB()
+	client, err := Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -20,7 +18,7 @@ func Test_Connect_DB_Close(t *testing.T) {
 }
 
 func Test_Insert_Delete(t *testing.T) {
-	client, err := db.Connect_DB()
+	client, err := Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -31,7 +29,7 @@ func Test_Insert_Delete(t *testing.T) {
 		t.Error(err)
 	}
 
-	post := &db.Post{
+	post := &Post{
 		Url:      "2023-03-23-Test-Insert-Delete",
 		Title:    "Test Insert Delete",
 		Date:     time.Now(),
@@ -52,7 +50,7 @@ func Test_Insert_Delete(t *testing.T) {
 }
 
 func Test_Get(t *testing.T) {
-	client, err := db.Connect_DB()
+	client, err := Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -63,18 +61,18 @@ func Test_Get(t *testing.T) {
 		t.Error(err)
 	}
 
-	posts := []*db.Post{
-		&db.Post{
+	posts := []*Post{
+		&Post{
 			Url:   "0",
 			Title: "mongo test1",
 			Tags:  []string{"db", "test"},
 		},
-		&db.Post{
+		&Post{
 			Url:   "1",
 			Title: "mongo test2",
 			Tags:  []string{"foo", "test"},
 		},
-		&db.Post{
+		&Post{
 			Url:   "2",
 			Title: "mongo test3",
 			Tags:  []string{"db"},
@@ -106,7 +104,7 @@ func Test_Get(t *testing.T) {
 }
 
 func Test_Read(t *testing.T) {
-	client, err := db.Connect_DB()
+	client, err := Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -122,18 +120,18 @@ func Test_Read(t *testing.T) {
 	dates[1], _ = time.Parse("2006-Jan-02", "2014-Feb-02")
 	dates[2], _ = time.Parse("2006-Jan-02", "2014-Feb-03")
 
-	posts := []*db.Post{
-		&db.Post{
+	posts := []*Post{
+		&Post{
 			Url:   "0",
 			Title: "mongo test1",
 			Date:  dates[0],
 		},
-		&db.Post{
+		&Post{
 			Url:   "1",
 			Title: "mongo test2",
 			Date:  dates[1],
 		},
-		&db.Post{
+		&Post{
 			Url:   "2",
 			Title: "mongo test3",
 			Date:  dates[2],
@@ -147,7 +145,7 @@ func Test_Read(t *testing.T) {
 		}
 	}
 
-	results, err := coll.Read(0, 3)
+	results, hasNext, err := coll.Read(0, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -158,15 +156,22 @@ func Test_Read(t *testing.T) {
 		}
 	}
 
-	results, err = coll.Read(1, 3)
+	if hasNext {
+		t.Errorf("Expected: hasNext=%v Received: hasNext=%v\n", !hasNext, hasNext)
+	}
+
+	results, hasNext, err = coll.Read(0, 2)
 	if err != nil {
 		t.Error(err)
 	}
 
-	for i, p := range posts[:2] {
+	for i, p := range posts[1:] {
 		if p.Title != results[len(results)-1-i].Title {
 			t.Errorf("Expected: %s Received: %s\n", p.Title, results[len(results)-1-i].Title)
 		}
+	}
+	if !hasNext {
+		t.Errorf("Expected: hasNext=%v Received: hasNext=%v\n", !hasNext, hasNext)
 	}
 
 	for _, i := range []string{"0", "1", "2"} {
@@ -178,7 +183,7 @@ func Test_Read(t *testing.T) {
 }
 
 func Test_Find(t *testing.T) {
-	client, err := db.Connect_DB()
+	client, err := Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -194,20 +199,20 @@ func Test_Find(t *testing.T) {
 	dates[1], _ = time.Parse("2006-Jan-02", "2014-Feb-02")
 	dates[2], _ = time.Parse("2006-Jan-02", "2014-Feb-03")
 
-	posts := []*db.Post{
-		&db.Post{
+	posts := []*Post{
+		&Post{
 			Url:   "0",
 			Title: "mongo test1",
 			Date:  dates[0],
 			Tags:  []string{"db", "test"},
 		},
-		&db.Post{
+		&Post{
 			Url:   "1",
 			Title: "mongo test2",
 			Date:  dates[1],
 			Tags:  []string{"foo", "test"},
 		},
-		&db.Post{
+		&Post{
 			Url:   "2",
 			Title: "mongo test3",
 			Date:  dates[2],
@@ -222,7 +227,7 @@ func Test_Find(t *testing.T) {
 		}
 	}
 
-	results, err := coll.Find(db.FilterTag{"db"}, 0, 3)
+	results, err := coll.Find(FilterTag{"db"}, 0, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -235,7 +240,7 @@ func Test_Find(t *testing.T) {
 		t.Errorf("Expected: %s Received: %s\n", "mongo test1", results[1].Title)
 	}
 
-	results, err = coll.Find(db.FilterTag{"test"}, 1, 3)
+	results, err = coll.Find(FilterTag{"test"}, 1, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -253,7 +258,7 @@ func Test_Find(t *testing.T) {
 }
 
 func Test_Update(t *testing.T) {
-	client, err := db.Connect_DB()
+	client, err := Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -264,7 +269,7 @@ func Test_Update(t *testing.T) {
 		t.Error(err)
 	}
 
-	post := &db.Post{
+	post := &Post{
 		Url:      "test-url",
 		Title:    "mongo Test_Update",
 		Date:     time.Now(),
@@ -289,7 +294,7 @@ func Test_Update(t *testing.T) {
 		t.Error(err)
 	}
 
-	results, err := coll.Find(db.FilterUrl{post.Url}, 0, 3)
+	results, err := coll.Find(FilterUrl{post.Url}, 0, 3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -305,7 +310,7 @@ func Test_Update(t *testing.T) {
 }
 
 func Test_Distinct(t *testing.T) {
-	client, err := db.Connect_DB()
+	client, err := Connect_DB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -316,18 +321,18 @@ func Test_Distinct(t *testing.T) {
 		t.Error(err)
 	}
 
-	posts := []*db.Post{
-		&db.Post{
+	posts := []*Post{
+		&Post{
 			Url:   "0",
 			Title: "mongo test1",
 			Tags:  []string{"db", "test"},
 		},
-		&db.Post{
+		&Post{
 			Url:   "1",
 			Title: "mongo test2",
 			Tags:  []string{"foo", "test"},
 		},
-		&db.Post{
+		&Post{
 			Url:   "2",
 			Title: "mongo test3",
 			Tags:  []string{"db"},
