@@ -8,12 +8,12 @@ import (
 
 type Post struct {
 	Id       primitive.ObjectID `bson:"_id,omitempty"			json:"id"`
-	Url      string             `bson:"url,omitempty"			json:"url"`
-	Title    string             `bson:"title,omitempty"			json:"title"`
-	Date     time.Time          `bson:"date,omitempty"			json:"date"`
-	Tags     []string           `bson:"tags,omitempty"			json:"tags"`
-	MarkDown string             `bson:"markdown,omitempty"		json:"markdown"`
-	Html     string             `bson:"html,omitempty"			json:"html"`
+	Url      string             `bson:"url"					json:"url"`
+	Title    string             `bson:"title"				json:"title"`
+	Date     time.Time          `bson:"date"				json:"date"`
+	Tags     []string           `bson:"tags"				json:"tags"`
+	MarkDown string             `bson:"markdown"				json:"markdown"`
+	Html     string             `bson:"html"				json:"html"`
 }
 type FilterId struct {
 	Id primitive.ObjectID `bson:"_id,omitempty"`
