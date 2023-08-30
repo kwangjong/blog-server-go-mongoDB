@@ -85,7 +85,7 @@ func getJwt(w http.ResponseWriter, r *http.Request) {
 	if ok && r.Header["Api-Key"][0] == API_KEY {
 		token, err := generateJwt()
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(err.Error()))
 			return
 		}
