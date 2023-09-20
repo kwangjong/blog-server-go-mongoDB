@@ -2,7 +2,7 @@ FROM golang:1.21
 
 WORKDIR /usr/src/app
 
-COPY go.mod go.sum ./
+COPY go.mod go.sum vendor/ ./
 RUN go mod download && go mod verify
 
 COPY . .
