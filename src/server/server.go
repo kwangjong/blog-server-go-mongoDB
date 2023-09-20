@@ -20,8 +20,8 @@ const (
 	BLOGLISTALLPATH = "/blog/list/all"
 	TAGSLISTPATH = "/tags/list"
 	AUTHPATH     = "/auth"
-	CERTFILEPATH = "/home/kwangjong/107106.xyz-ssl-bundle/domain.cert.pem"
-	KEYFILEPATH  = "/home/kwangjong/107106.xyz-ssl-bundle/private.key.pem"
+	CERTFILEPATH = "/usr/src/app/domain.cert.pem"
+	KEYFILEPATH  = "/usr/src/app/private.key.pem"
 )
 
 var PostDB *db.DBCollection
@@ -107,7 +107,7 @@ func Blog(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token")
 
 	switch r.Method {
 	case http.MethodGet:

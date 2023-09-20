@@ -1,8 +1,8 @@
 build:
-	cd src && go build -o ../server
+	cd src && docker build -t api-server .
 
 run:
-	./server
+	docker run -d -p 443:443 api-server
 
 test:
 	cd src && go test -v
