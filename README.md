@@ -9,8 +9,10 @@ blog posts:
 * [blog migration V : backend API I](https://kwangjong.github.io/blog/2023-08-30-Blog-Migration-V-:-Backend-API-I)
 * [blog migration VI : backend API II](https://kwangjong.github.io/blog/2023-08-30-Blog-Migration-V-:-Backend-API-II)
 * [blog migration VII : JWT and TLS](https://kwangjong.github.io/blog/2023-08-30-Blog-Migration-VII-:-Securing-API:-JWT-and-TLS)
+* [deploying a Go API server with Docker](https://kwangjong.github.io/blog/2023-09-20-Deploying-a-Go-API-Server-with-Docker)
 
 # Built with
 * SvelteKit (TypeScript) [frontend repo](https://github.com/kwangjong/kwangjong.github.io)
 * Go [back-end repo](https://github.com/kwangjong/blog-server-go-mongoDB)
 * MongoDB
+* Docker
