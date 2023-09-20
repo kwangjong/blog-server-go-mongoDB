@@ -9,4 +9,4 @@ COPY . .
 RUN mkdir -p /usr/local/bin
 RUN go build -v -o /usr/local/bin/app .
 
-CMD ["/usr/local/bin/app"]
+CMD ["app"]
