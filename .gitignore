@@ -1,2 +1,4 @@
-key.json
-.env
+src/key.json
+src/private.key.pem
+src/domain.cert.pem
+src/.env
