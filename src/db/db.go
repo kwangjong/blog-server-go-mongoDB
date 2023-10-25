@@ -2,9 +2,7 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -12,11 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-)
-
-const (
-	MONGO_KEY = "/usr/src/app/key.json"
-	MONGO_URL = "mongodb+srv://cluster0.rtswz75.mongodb.net"
+	"github.com/joho/godotenv"
 )
 
 type DBClient struct {
@@ -28,19 +22,14 @@ type DBCollection struct {
 }
 
 func Connect_DB() (*DBClient, error) {
-	key_file, err := os.Open(MONGO_KEY)
-	if err != nil {
-		return nil, err
-	}
-	defer key_file.Close()
+	err := godotenv.Load()
+    if err != nil {
+        log.Fatalf("err loading: %v", err)
+    }
 
-	key_byte, _ := ioutil.ReadAll(key_file)
+	MONGO_URL := os.Getenv("MONGO_URL")
 
-	var credential options.Credential
-	json.Unmarshal([]byte(key_byte), &credential)
-
-	opts := options.Client().ApplyURI(MONGO_URL).
-		SetAuth(credential)
+	opts := options.Client().ApplyURI(MONGO_URL)
 
 	client, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
