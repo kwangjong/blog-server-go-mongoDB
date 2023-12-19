@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,8 +21,8 @@ const (
 	BLOGLISTALLPATH = "/blog/list/all"
 	TAGSLISTPATH = "/tags/list"
 	AUTHPATH     = "/auth"
-	CERTFILEPATH = "/usr/src/app/domain.cert.pem"
-	KEYFILEPATH  = "/usr/src/app/private.key.pem"
+	CERTFILEPATH = "/usr/src/app/107106.xyz-ssl-bundle/combined.cert.pem"
+	KEYFILEPATH  = "/usr/src/app/107106.xyz-ssl-bundle/private.key.pem"
 )
 
 var PostDB *db.DBCollection
@@ -249,7 +250,23 @@ func Run() {
 		os.Exit(0)
 	}()
 
-	if err := http.ListenAndServeTLS(":443", CERTFILEPATH, KEYFILEPATH, nil); err != nil {
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		PreferServerCipherSuites: true,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+            		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+		},
+	}
+
+	server := &http.Server{
+		Addr: ":443",
+		Handler: nil,
+		TLSConfig: tlsConfig,
+	}
+
+	if err := server.ListenAndServeTLS(CERTFILEPATH, KEYFILEPATH); err != nil {
 		log.Fatal(err)
 	}
 
