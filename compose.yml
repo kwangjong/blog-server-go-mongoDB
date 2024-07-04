@@ -1,0 +1,30 @@
+services:
+  porkcron:
+    build: ../porkcron/docker
+    container_name: porkcron
+    env_file: ../porkcron/.env
+    volumes:
+      - ssl:/etc/porkcron
+
+  nginx:
+    build: ../porkcron/nginx
+    container_name: nginx
+    restart: always
+    ports:
+      - 443:443
+    volumes:
+      - ssl:/etc/porkcron:ro
+    depends_on:
+      - porkcron
+
+  api_server:
+    build: ./src
+    container_name: api_server
+    restart: always
+    expose:
+      - 8080
+    depends_on:
+      - nginx
+
+volumes:
+  ssl:

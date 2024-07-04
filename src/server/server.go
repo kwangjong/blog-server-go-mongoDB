@@ -249,7 +249,7 @@ func Run() {
 
 	server := &http.Server{
 		Addr: ":8080",
-		Handler: nil
+		Handler: nil,
 	}
 
 	if err := server.ListenAndServe(); err != nil {
