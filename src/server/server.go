@@ -128,11 +128,7 @@ func BlogList(w http.ResponseWriter, r *http.Request) {
 	var err_code int
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	}
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token")
 
 	skip, err := strconv.ParseInt(r.URL.Query().Get("skip"), 10, 64)
 	numPost, err := strconv.ParseInt(r.URL.Query().Get("numPost"), 10, 64)
