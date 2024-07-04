@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	BLOGPATH     = "/blog/"
-	BLOGLISTPATH = "/blog/list"
+	BLOGPATH        = "/blog/"
+	BLOGLISTPATH    = "/blog/list"
 	BLOGLISTALLPATH = "/blog/list/all"
-	TAGSLISTPATH = "/tags/list"
-	AUTHPATH     = "/auth"
+	TAGSLISTPATH    = "/tags/list"
+	AUTHPATH        = "/auth"
 )
 
 var PostDB *db.DBCollection
@@ -31,7 +31,7 @@ func Get_Blog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := PostDB.Get(post_url)
+	post, err := PostDB.Get(post_url, validateJwt(r))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -111,11 +111,11 @@ func Blog(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		Get_Blog(w, r)
 	case http.MethodPost:
-		validateJwt(Post_Blog).ServeHTTP(w, r)
+		validateJwtHandler(Post_Blog).ServeHTTP(w, r)
 	case http.MethodPut:
-		validateJwt(Put_Blog).ServeHTTP(w, r)
+		validateJwtHandler(Put_Blog).ServeHTTP(w, r)
 	case http.MethodDelete:
-		validateJwt(Delete_Blog).ServeHTTP(w, r)
+		validateJwtHandler(Delete_Blog).ServeHTTP(w, r)
 	default:
 		return
 	}
@@ -142,7 +142,7 @@ func BlogList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	list, hasNext, err := PostDB.Read(skip, numPost)
+	list, hasNext, err := PostDB.Read(skip, numPost, validateJwt(r))
 	if err != nil {
 		log.Printf("Error: %s\n", err)
 		http.Error(w, err.Error(), err_code)
@@ -248,7 +248,7 @@ func Run() {
 	}()
 
 	server := &http.Server{
-		Addr: ":8080",
+		Addr:    ":8080",
 		Handler: nil,
 	}
 

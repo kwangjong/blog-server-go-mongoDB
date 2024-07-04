@@ -6,11 +6,11 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"github.com/joho/godotenv"
 )
 
 type DBClient struct {
@@ -23,9 +23,9 @@ type DBCollection struct {
 
 func Connect_DB() (*DBClient, error) {
 	err := godotenv.Load()
-    if err != nil {
-        log.Fatalf("err loading: %v", err)
-    }
+	if err != nil {
+		log.Fatalf("err loading: %v", err)
+	}
 
 	MONGO_URL := os.Getenv("MONGO_URL")
 
@@ -106,10 +106,12 @@ func (db_coll *DBCollection) Update(post *Post) error {
 	return nil
 }
 
-func (db_coll *DBCollection) Get(url string) (*Post, error) {
+func (db_coll *DBCollection) Get(url string, authenticated bool) (*Post, error) {
 	coll := db_coll.collection
 
-	filter := FilterUrl{url}
+	var filter FilterUrl
+	filter.Url = url
+
 	opts := options.Find()
 	cursor, err := coll.Find(context.TODO(), filter, opts)
 	if err != nil {
@@ -124,6 +126,11 @@ func (db_coll *DBCollection) Get(url string) (*Post, error) {
 	if len(results) == 0 {
 		return nil, errors.New("page not found")
 	}
+
+	if results[0].Visibility == "private" && !authenticated {
+		return nil, errors.New("page restricted")
+	}
+
 	log.Printf("Found documents with url: %v", url)
 	return results[0], err
 }
@@ -152,7 +159,7 @@ func (db_coll *DBCollection) Find(filter interface{}, skip int64, numPost int64)
 	return results, err
 }
 
-func (db_coll *DBCollection) Read(skip int64, numPost int64) ([]*Post, bool, error) {
+func (db_coll *DBCollection) Read(skip int64, numPost int64, authenticated bool) ([]*Post, bool, error) {
 	coll := db_coll.collection
 
 	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost + 1).SetProjection(bson.D{
@@ -162,7 +169,19 @@ func (db_coll *DBCollection) Read(skip int64, numPost int64) ([]*Post, bool, err
 		{"tags", 1},
 	})
 
-	cursor, err := coll.Find(context.TODO(), bson.D{}, opts)
+	filter := bson.D{}
+	if !authenticated {
+		filter = bson.D{
+			{"visibility", bson.D{
+				{"$ne", "private"},
+			}},
+			{"visibility", bson.D{
+				{"$ne", "unlisted"},
+			}},
+		}
+	}
+
+	cursor, err := coll.Find(context.TODO(), filter, opts)
 	if err != nil {
 		return nil, false, err
 	}
