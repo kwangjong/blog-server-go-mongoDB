@@ -92,7 +92,7 @@ func getJwt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == http.MethodDelete {
+	if r.Method == http.MethodGet {
 		validateJwtHandler(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("authorized"))
 		}).ServeHTTP(w, r)
