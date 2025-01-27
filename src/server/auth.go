@@ -92,13 +92,14 @@ func getJwt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == http.MethodGet {
+	if r.Method == http.MethodPost {
 		validateJwtHandler(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("authorized"))
 		}).ServeHTTP(w, r)
 		return
 	}
-
+	
+	log.Printf("%s: %s", r.Header["Api-Key"], API_KEY)
 	_, ok := r.Header["Api-Key"]
 	if ok && r.Header["Api-Key"][0] == API_KEY {
 		token, err := generateJwt()
