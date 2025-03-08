@@ -18,7 +18,7 @@ const (
 	BLOGPATH        = "/blog/"
 	BLOGLISTPATH    = "/blog/list"
 	BLOGLISTALLPATH = "/blog/list/all"
-	TAGSLISTPATH    = "/tags/list"
+	TAGSLISTALLPATH = "/tags/list/all"
 	AUTHPATH        = "/auth"
 )
 
@@ -130,6 +130,7 @@ func BlogList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token")
 
+	tag := r.URL.Query().Get("tag")
 	skip, err := strconv.ParseInt(r.URL.Query().Get("skip"), 10, 64)
 	numPost, err := strconv.ParseInt(r.URL.Query().Get("numPost"), 10, 64)
 	if err != nil {
@@ -138,7 +139,7 @@ func BlogList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	list, hasNext, err := PostDB.Read(skip, numPost, validateJwt(r))
+	list, hasNext, err := PostDB.Read(skip, numPost, validateJwt(r), tag)
 	if err != nil {
 		log.Printf("Error: %s\n", err)
 		http.Error(w, err.Error(), err_code)
@@ -186,7 +187,7 @@ func BlogListAll(w http.ResponseWriter, r *http.Request) {
 	w.Write(tags_json)
 }
 
-func TagsList(w http.ResponseWriter, r *http.Request) {
+func TagsListAll(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s: %s", r.Method, r.URL.Path)
 
 	var err error
@@ -219,7 +220,7 @@ func Run() {
 	http.HandleFunc(BLOGPATH, Blog)
 	http.HandleFunc(BLOGLISTPATH, BlogList)
 	http.HandleFunc(BLOGLISTALLPATH, BlogListAll)
-	http.HandleFunc(TAGSLISTPATH, TagsList)
+	http.HandleFunc(TAGSLISTALLPATH, TagsListAll)
 	http.HandleFunc(AUTHPATH, getJwt)
 
 	log.Printf("Starting server...\n")

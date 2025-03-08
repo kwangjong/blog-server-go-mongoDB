@@ -159,7 +159,7 @@ func (db_coll *DBCollection) Find(filter interface{}, skip int64, numPost int64)
 	return results, err
 }
 
-func (db_coll *DBCollection) Read(skip int64, numPost int64, authenticated bool) ([]*Post, bool, error) {
+func (db_coll *DBCollection) Read(skip int64, numPost int64, authenticated bool, tag string) ([]*Post, bool, error) {
 	coll := db_coll.collection
 
 	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetSkip(skip).SetLimit(numPost + 1).SetProjection(bson.D{
@@ -167,18 +167,17 @@ func (db_coll *DBCollection) Read(skip int64, numPost int64, authenticated bool)
 		{"title", 1},
 		{"date", 1},
 		{"tags", 1},
+		{"visibility", 1},
 	})
 
-	filter := bson.D{}
+	filter := bson.M{}
+
+	if tag != "" {
+		filter["tags"] = bson.M{"$in": []string{tag}}
+	}
+
 	if !authenticated {
-		filter = bson.D{
-			{"visibility", bson.D{
-				{"$ne", "private"},
-			}},
-			{"visibility", bson.D{
-				{"$ne", "unlisted"},
-			}},
-		}
+		filter["visibility"] = bson.M{"$nin": []string{"private", "unlisted"}}
 	}
 
 	cursor, err := coll.Find(context.TODO(), filter, opts)
