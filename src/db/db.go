@@ -124,7 +124,7 @@ func (db_coll *DBCollection) Get(url string, authenticated bool) (*Post, error) 
 		return nil, err
 	}
 	if len(results) == 0 {
-		return nil, errors.New("page not found")
+		return nil, errors.New("404 page not found")
 	}
 
 	if results[0].Visibility == "private" && !authenticated {

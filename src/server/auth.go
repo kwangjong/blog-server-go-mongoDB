@@ -23,7 +23,11 @@ func LoadSecret() {
 	SECRET = []byte(os.Getenv("JWT_SECRET"))
 	API_KEY = os.Getenv("API_KEY")
 }
-func generateJwt() (string, error) {
+
+func generateJwt(api_key string) (string, error) {
+	if api_key != API_KEY {
+		return "", errors.New("not authorized")
+	}
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["exp"] = time.Now().Add(time.Hour * 12).Unix()
@@ -37,7 +41,7 @@ func generateJwt() (string, error) {
 	return tokenStr, nil
 }
 
-func validateJwtHandler(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+func validateJwtHandler(nextFunc func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header["Token"] != nil {
 			token, err := jwt.Parse(r.Header.Get("Token"), func(token *jwt.Token) (interface{}, error) {
@@ -54,7 +58,7 @@ func validateJwtHandler(next func(w http.ResponseWriter, r *http.Request)) http.
 			}
 
 			if token.Valid {
-				next(w, r)
+				http.HandlerFunc(nextFunc).ServeHTTP(w, r)
 			}
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -81,35 +85,25 @@ func validateJwt(r *http.Request) bool {
 	return false
 }
 
-func getJwt(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%s: %s", r.Method, r.URL.Path)
+func AuthPOST(w http.ResponseWriter, r *http.Request) {
+	validateJwtHandler(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("authorized"))
+	})
+}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS, DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Api-Key, Token")
-
-	if r.Method == http.MethodOptions {
-		return
-	}
-
-	if r.Method == http.MethodPost {
-		validateJwtHandler(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("authorized"))
-		}).ServeHTTP(w, r)
-		return
-	}
-
+func AuthGET(w http.ResponseWriter, r *http.Request) {
 	_, ok := r.Header["Api-Key"]
-	if ok && r.Header["Api-Key"][0] == API_KEY {
-		token, err := generateJwt()
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		w.Write([]byte(token))
-	} else {
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("not authorized"))
 	}
+
+	token, err := generateJwt(r.Header["Api-Key"][0])
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Write([]byte(token))
 }
