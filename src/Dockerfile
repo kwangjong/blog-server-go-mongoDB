@@ -5,8 +5,7 @@ ENV GOFLAGS="-mod=vendor"
 WORKDIR /app
 
 COPY . .
-RUN ls -l vendor/
-RUN go clean -modcache
-RUN go build -mod=vendor -v -o app .
+RUN mkdir -p /usr/local/bin
+RUN go build -v -o /usr/local/bin/app .
 
 CMD ["app"]
