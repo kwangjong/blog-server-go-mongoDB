@@ -163,7 +163,7 @@ func BlogListAll(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	var err_code int
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token")
 
@@ -192,7 +192,7 @@ func TagsListAll(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	var err_code int
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token")
 
