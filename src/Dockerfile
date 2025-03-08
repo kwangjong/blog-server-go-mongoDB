@@ -1,9 +1,12 @@
 FROM golang:1.24
 
-WORKDIR /usr/src/app
+ENV GOFLAGS="-mod=vendor"
+
+WORKDIR /app
 
 COPY . .
-RUN mkdir -p /usr/local/bin
-RUN go build --build-arg GOFLAGS="-mod=vendor" -t -v -o /usr/local/bin/app .
+RUN ls -l vendor/
+RUN go clean -modcache
+RUN go build -mod=vendor -v -o app .
 
 CMD ["app"]
