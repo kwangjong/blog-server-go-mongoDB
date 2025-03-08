@@ -165,13 +165,13 @@ func BlogListAll(w http.ResponseWriter, r *http.Request) {
 	var err_code int
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token")
 
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 
-	tags, err := PostDB.Distinct("url")
+	tags, err := PostDB.Distinct("url", validateJwt(r))
 	if err != nil {
 		log.Printf("Error: %s\n", err)
 		http.Error(w, err.Error(), err_code)
@@ -194,13 +194,13 @@ func TagsListAll(w http.ResponseWriter, r *http.Request) {
 	var err_code int
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token")
 
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 
-	tags, err := PostDB.Distinct("tags")
+	tags, err := PostDB.Distinct("tags", validateJwt(r))
 	if err != nil {
 		log.Printf("Error: %s\n", err)
 		http.Error(w, err.Error(), err_code)

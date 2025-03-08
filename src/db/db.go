@@ -199,11 +199,16 @@ func (db_coll *DBCollection) Read(skip int64, numPost int64, authenticated bool,
 	return results[:len(results)-1], true, nil
 }
 
-func (db_coll *DBCollection) Distinct(fieldName string) ([]interface{}, error) {
+func (db_coll *DBCollection) Distinct(fieldName string, authenticated bool) ([]interface{}, error) {
 	results := []interface{}{}
 	coll := db_coll.collection
 
-	results, err := coll.Distinct(context.TODO(), fieldName, bson.D{})
+	filter := bson.M{}
+	if !authenticated {
+		filter["visibility"] = bson.M{"$nin": []string{"private", "unlisted"}}
+	}
+
+	results, err := coll.Distinct(context.TODO(), fieldName, filter)
 	if err != nil {
 		return results, err
 	}
