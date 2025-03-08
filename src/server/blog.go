@@ -116,29 +116,31 @@ func (b *BlogHandler) BlogDELETE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *BlogHandler) BlogList(w http.ResponseWriter, r *http.Request) {
-	var err error
-	var err_code int
+	query := r.URL.Query()
 
-	tag := r.URL.Query().Get("tag")
-	skip, err := strconv.ParseInt(r.URL.Query().Get("skip"), 10, 64)
-	numPost, err := strconv.ParseInt(r.URL.Query().Get("numPost"), 10, 64)
+	tag := query.Get("tag")
+	skip, err := strconv.ParseInt(query.Get("skip"), 10, 64)
+	numPost, err := strconv.ParseInt(query.Get("numPost"), 10, 64)
+
+	log.Printf("tag: %s, skip: %d, numPost: %d", tag, skip, numPost)
+
 	if err != nil {
 		log.Printf("Error: %s\n", err)
-		http.Error(w, err.Error(), err_code)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	list, hasNext, err := b.db.Read(skip, numPost, validateJwt(r), tag)
 	if err != nil {
 		log.Printf("Error: %s\n", err)
-		http.Error(w, err.Error(), err_code)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	list_json, err := json.Marshal(list)
 	if err != nil {
 		log.Printf("Error: %s\n", err)
-		http.Error(w, err.Error(), err_code)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -148,28 +150,16 @@ func (b *BlogHandler) BlogList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *BlogHandler) BlogListAll(w http.ResponseWriter, r *http.Request) {
-	var err error
-	var err_code int
-
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	}
-
 	tags, err := b.db.Distinct("url", validateJwt(r))
 	if err != nil {
 		log.Printf("Error: %s\n", err)
-		http.Error(w, err.Error(), err_code)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	tags_json, err := json.Marshal(tags)
 	if err != nil {
 		log.Printf("Error: %s\n", err)
-		http.Error(w, err.Error(), err_code)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -177,28 +167,16 @@ func (b *BlogHandler) BlogListAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *BlogHandler) TagsListAll(w http.ResponseWriter, r *http.Request) {
-	var err error
-	var err_code int
-
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	}
-
 	tags, err := b.db.Distinct("tags", validateJwt(r))
 	if err != nil {
 		log.Printf("Error: %s\n", err)
-		http.Error(w, err.Error(), err_code)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	tags_json, err := json.Marshal(tags)
 	if err != nil {
 		log.Printf("Error: %s\n", err)
-		http.Error(w, err.Error(), err_code)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
