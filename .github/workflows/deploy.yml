@@ -19,7 +19,7 @@ jobs:
 
       - name: SSH into Server and Build
         run: |
-          ssh ${{ secrets.SSH_SERVER }} << 'EOF'
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_SERVER }} << 'EOF'
             cd ~/blog-server-go-mongoDB
             git pull origin main
             docker compose down
