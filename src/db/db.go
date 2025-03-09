@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -198,9 +199,7 @@ func (db_coll *DBCollection) Read(skip int64, numPost int64, authenticated bool,
 
 	return results[:len(results)-1], true, nil
 }
-
-func (db_coll *DBCollection) Distinct(fieldName string, authenticated bool) ([]interface{}, error) {
-	results := []interface{}{}
+func (db_coll *DBCollection) Distinct(fieldName string, authenticated bool) ([]string, error) {
 	coll := db_coll.collection
 
 	filter := bson.M{}
@@ -208,10 +207,36 @@ func (db_coll *DBCollection) Distinct(fieldName string, authenticated bool) ([]i
 		filter["visibility"] = bson.M{"$nin": []string{"private", "unlisted"}}
 	}
 
-	results, err := coll.Distinct(context.TODO(), fieldName, filter)
-	if err != nil {
-		return results, err
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{{Key: "$unwind", Value: bson.M{"path": "$" + fieldName}}},
+		{{Key: "$sort", Value: bson.M{"date": -1}}},
+		{{Key: "$group", Value: bson.M{
+			"_id":    "$" + fieldName,
+			"latest": bson.M{"$first": "$date"},
+		}}},
+		{{Key: "$sort", Value: bson.M{"latest": -1}}},
 	}
-	log.Printf("Found %d distinct %s\n", len(results), fieldName)
-	return results, nil
+
+	cursor, err := coll.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var results []struct {
+		ID     string    `bson:"_id"`
+		Latest time.Time `bson:"latest"`
+	}
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	var distinctValues []string
+	for _, result := range results {
+		distinctValues = append(distinctValues, result.ID)
+	}
+
+	log.Printf("Found %d distinct %s sorted by most recent\n", len(distinctValues), fieldName)
+	return distinctValues, nil
 }
