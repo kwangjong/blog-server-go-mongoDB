@@ -215,7 +215,7 @@ func (db_coll *DBCollection) Distinct(fieldName string, authenticated bool) ([]s
 			"_id":    "$" + fieldName,
 			"latest": bson.M{"$first": "$date"},
 		}}},
-		{{Key: "$sort", Value: bson.M{"latest": -1}}},
+		{{Key: "$sort", Value: bson.M{"latest": -1, "_id": 1}}},
 	}
 
 	cursor, err := coll.Aggregate(context.TODO(), pipeline)
