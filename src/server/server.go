@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	BLOGPATH        = "/blog/{slug}"
+	BLOGPATH        = "/blog"
+	BLOGSLUGPATH    = "/blog/{slug}"
 	BLOGLISTPATH    = "/blog/list"
 	BLOGLISTALLPATH = "/blog/list/all"
 	TAGSLISTALLPATH = "/tags/list/all"
@@ -56,10 +57,10 @@ func Run() {
 	r.HandleFunc(BLOGLISTALLPATH, blog.BlogListAll).Methods("GET")
 	r.HandleFunc(TAGSLISTALLPATH, blog.TagsListAll).Methods("GET")
 
-	r.HandleFunc(BLOGPATH, blog.BlogGET).Methods("GET")
+	r.HandleFunc(BLOGSLUGPATH, blog.BlogGET).Methods("GET")
+	r.HandleFunc(BLOGSLUGPATH, validateJwtHandler(blog.BlogDELETE)).Methods("DELETE")
 	r.HandleFunc(BLOGPATH, validateJwtHandler(blog.BlogPOST)).Methods("POST")
 	r.HandleFunc(BLOGPATH, validateJwtHandler(blog.BlogPUT)).Methods("PUT")
-	r.HandleFunc(BLOGPATH, validateJwtHandler(blog.BlogDELETE)).Methods("DELETE")
 
 	r.HandleFunc(AUTHPATH, AuthGET).Methods("GET")
 	r.HandleFunc(AUTHPATH, AuthPOST).Methods("POST")
