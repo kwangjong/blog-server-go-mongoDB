@@ -53,14 +53,15 @@ func Run() {
 
 	r.Use(loggingMiddleware)
 
+	r.HandleFunc(BLOGPATH, validateJwtHandler(blog.BlogPOST)).Methods("POST")
+	r.HandleFunc(BLOGPATH, validateJwtHandler(blog.BlogPUT)).Methods("PUT")
+
 	r.HandleFunc(BLOGLISTPATH, blog.BlogList).Methods("GET")
 	r.HandleFunc(BLOGLISTALLPATH, blog.BlogListAll).Methods("GET")
 	r.HandleFunc(TAGSLISTALLPATH, blog.TagsListAll).Methods("GET")
 
 	r.HandleFunc(BLOGSLUGPATH, blog.BlogGET).Methods("GET")
 	r.HandleFunc(BLOGSLUGPATH, validateJwtHandler(blog.BlogDELETE)).Methods("DELETE")
-	r.HandleFunc(BLOGPATH, validateJwtHandler(blog.BlogPOST)).Methods("POST")
-	r.HandleFunc(BLOGPATH, validateJwtHandler(blog.BlogPUT)).Methods("PUT")
 
 	r.HandleFunc(AUTHPATH, AuthGET).Methods("GET")
 	r.HandleFunc(AUTHPATH, AuthPOST).Methods("POST")
