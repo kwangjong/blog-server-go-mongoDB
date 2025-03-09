@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	BLOGPATH        = "/blog"
 	BLOGSLUGPATH    = "/blog/{slug}"
+	BLOGNEWPATH     = "/blog/new"
 	BLOGLISTPATH    = "/blog/list"
 	BLOGLISTALLPATH = "/blog/list/all"
 	TAGSLISTALLPATH = "/tags/list/all"
@@ -51,14 +51,12 @@ func Run() {
 
 	r := mux.NewRouter()
 
-	r.Use(loggingMiddleware)
-
-	r.HandleFunc(BLOGPATH, validateJwtHandler(blog.BlogPOST)).Methods("POST")
-	r.HandleFunc(BLOGPATH, validateJwtHandler(blog.BlogPUT)).Methods("PUT")
-
 	r.HandleFunc(BLOGLISTPATH, blog.BlogList).Methods("GET")
 	r.HandleFunc(BLOGLISTALLPATH, blog.BlogListAll).Methods("GET")
 	r.HandleFunc(TAGSLISTALLPATH, blog.TagsListAll).Methods("GET")
+
+	r.HandleFunc(BLOGNEWPATH, validateJwtHandler(blog.BlogPOST)).Methods("POST")
+	r.HandleFunc(BLOGNEWPATH, validateJwtHandler(blog.BlogPUT)).Methods("PUT")
 
 	r.HandleFunc(BLOGSLUGPATH, blog.BlogGET).Methods("GET")
 	r.HandleFunc(BLOGSLUGPATH, validateJwtHandler(blog.BlogDELETE)).Methods("DELETE")
